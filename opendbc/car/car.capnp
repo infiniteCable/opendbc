@@ -630,7 +630,6 @@ struct CarParams {
   enum SteerControlType {
     torque @0;
     angle @1;
-    curvature @3;
 
     curvatureDEPRECATED @2;
   }
