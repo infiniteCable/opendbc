@@ -1503,7 +1503,7 @@ BO_ 258 MEB_ESP_04: 48 XXX
  SG_ Yaw_Rate_Sign : 54|1@0+ (1,0) [0|1] "" XXX
  SG_ Regen_Braking : 123|1@1+ (1,0) [0|7] "" XXX
  SG_ Standstill : 171|1@0+ (1,0) [0|1] "" XXX
- SG_ Longitudinal_Speed : 180|11@1+ (0.125,0) [0|63] "Unit_KilometerPerHour" XXX
+ SG_ Longitudinal_Speed : 181|10@1+ (0.25,0) [0|255] "Unit_KilometerPerHour" XXX
 
 BO_ 313 MEB_ESP_05: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
