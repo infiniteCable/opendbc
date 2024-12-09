@@ -1501,11 +1501,9 @@ BO_ 258 MEB_ESP_04: 48 XXX
  SG_ Longitudinal_Accel : 24|10@1+ (0.03125,-16) [0|255] "Unit_MeterPerSquareSecond" XXX
  SG_ Yaw_Rate : 40|14@1+ (0.01,0) [0|16383] "Unit_DegreePerSecond" XXX
  SG_ Yaw_Rate_Sign : 54|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_7 : 99|1@0+ (1,0) [0|1] "" XXX
- SG_ ESP_Hold : 120|1@0+ (1,0) [0|1] "" XXX
  SG_ Regen_Braking : 123|1@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_6 : 171|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_5 : 180|10@1+ (1,0) [0|63] "" XXX
+ SG_ Standstill : 171|1@0+ (1,0) [0|1] "" XXX
+ SG_ Longitudinal_Speed : 180|11@1+ (0.125,0) [0|63] "Unit_KilometerPerHour" XXX
 
 BO_ 313 MEB_ESP_05: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
