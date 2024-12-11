@@ -145,6 +145,7 @@ class CarController(CarControllerBase):
         #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override
         #   * send a few frames of HMS RAMP RELEASE command right at the end of active long control
         accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0
+        accel = self.CP.startAccel if starting and CS.esp_hold_confirmation else accel # fix long movement reaction from full stop
         self.accel_last = accel
 
         # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
