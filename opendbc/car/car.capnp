@@ -537,14 +537,6 @@ struct CarParams {
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
     kf @4 :Float32;
-    kpBP_pos @5 :List(Float32);
-    kpV_pos @6 :List(Float32);
-    kiBP_pos @7 :List(Float32);
-    kiV_pos @8 :List(Float32);
-    kpBP_neg @9 :List(Float32);
-    kpV_neg @10 :List(Float32);
-    kiBP_neg @11 :List(Float32);
-    kiV_neg @12 :List(Float32);
   }
 
   struct LateralTorqueTuning {
@@ -564,6 +556,14 @@ struct CarParams {
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
     kf @6 :Float32;
+    kpBP_pos @7 :List(Float32);
+    kpV_pos @8 :List(Float32);
+    kiBP_pos @9 :List(Float32);
+    kiV_pos @10 :List(Float32);
+    kpBP_neg @11 :List(Float32);
+    kpV_neg @12 :List(Float32);
+    kiBP_neg @13 :List(Float32);
+    kiV_neg @14 :List(Float32);
     deadzoneBPDEPRECATED @4 :List(Float32);
     deadzoneVDEPRECATED @5 :List(Float32);
   }
