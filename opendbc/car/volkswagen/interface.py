@@ -88,8 +88,8 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & VolkswagenFlags.MEB:
       ret.longitudinalActuatorDelay = 0.15
-      ret.longitudinalTuning.kiBPPos = [0., 1.]
-      ret.longitudinalTuning.kiVPos  = [2., 0]
+      #ret.longitudinalTuning.kiBPPos = [0., 1.]
+      #ret.longitudinalTuning.kiVPos  = [2., 0]
 
     ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
     if experimental_long:
