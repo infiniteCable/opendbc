@@ -197,14 +197,6 @@ class CarInterfaceBase(ABC):
     ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.]
-    ret.longitudinalTuning.kpBPPos = [0.]
-    ret.longitudinalTuning.kpVPos = [0.]
-    ret.longitudinalTuning.kiBPPos = [0.]
-    ret.longitudinalTuning.kiVPos = [0.]
-    ret.longitudinalTuning.kpBPNeg = [0.]
-    ret.longitudinalTuning.kpVNeg = [0.]
-    ret.longitudinalTuning.kiBPNeg = [0.]
-    ret.longitudinalTuning.kiVNeg = [0.]
     # TODO estimate car specific lag, use .15s for now
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
