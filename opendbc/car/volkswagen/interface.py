@@ -76,10 +76,10 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif ret.flags & VolkswagenFlags.MEB:
       ret.steerActuatorDelay = 0.15
-      ret.lateralTuning.pid.kpBP = [0.] #[0., 20., 45.]
+      ret.lateralTuning.pid.kpBP = [0., 20., 45.]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kf = 1.
-      ret.lateralTuning.pid.kpV = [1.] #[0.0, 0.2, 0.7]
+      ret.lateralTuning.pid.kpV = [0.0, 0.2, 0.6]
       ret.lateralTuning.pid.kiV = [0.00001]
     else:
       ret.steerActuatorDelay = 0.1
