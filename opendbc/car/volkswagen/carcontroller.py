@@ -19,7 +19,7 @@ def get_jerk_limits(v_ego: float, a_control: float, a_max: float, a_min: float) 
   J_min = 4.0
   J_max = 4.0
   
-  sf = 1 / (1 + math.exp(-k * (v - v_threshold)))
+  sf = 1 / (1 + math.exp(-k * (v_ego - v_threshold)))
   factor = a_control / (a_max if a_control >= 0 else abs(a_min))
   J_upper = max(0, min(J_min + J_base * sf * factor, J_max))
   J_lower = max(0, min(J_min - J_base * sf * factor, J_max))
