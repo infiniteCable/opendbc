@@ -6,7 +6,6 @@ from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan, mebcan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
-#from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import get_T_FOLLOW
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -213,14 +212,12 @@ class CarController(CarControllerBase):
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if self.CP.flags & VolkswagenFlags.MEB:
-        desired_gap = max(1, CS.out.vEgo * 1.5) # TODO gap from OP, get_T_FOLLOW(hud_control.leadDistanceBars))
-        distance = 30 if hud_control.leadVisible else 0 # TODO lead distance from model
         show_distance_bars = self.frame - self.distance_bar_frame < 400
-
         acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                        CS.esp_hold_confirmation, CC.cruiseControl.override or CS.out.gasPressed)
-        can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH, hud_control.leadVisible,
-                                                         hud_control.leadDistanceBars, show_distance_bars, CS.esp_hold_confirmation, distance, desired_gap))
+        can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
+                                                         hud_control.leadVisible, hud_control.leadDistanceBars, show_distance_bars,
+                                                         CS.esp_hold_confirmation, hud_control.leadDistance, CS.out.vEgo * hud_control.leadFollowTime))
 
       else:
         lead_distance = 0
