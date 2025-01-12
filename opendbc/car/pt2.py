@@ -62,13 +62,20 @@ class PT2Filter:
 
     return (a1d, a2d, b0d, b1d, b2d)
 
-  def reset(self, new_output: float):
+  def sync(self, new_output: float):
     """
     Setzt interne Zustände so,
     dass der PT2-Ausgang ab sofort = new_output ist.
     """
     self.y1 = new_output
     self.y2 = new_output
+
+  def reset(self):
+    """
+    Setzt interne Zustände zurück
+    """
+    self.y1 = 0.0
+    self.y2 = 0.0
     self.u1 = 0.0
     self.u2 = 0.0
 
