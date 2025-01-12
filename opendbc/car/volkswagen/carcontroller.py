@@ -49,6 +49,8 @@ class CarController(CarControllerBase):
     self.eps_timer_soft_disable_alert = False
     self.hca_frame_timer_running = 0
     self.hca_frame_same_torque = 0
+    self.lead_distance_bars_last = None
+    self.distance_bar_frame = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -206,15 +208,19 @@ class CarController(CarControllerBase):
         can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.latActive,
                                                          CS.out.steeringPressed, hud_alert, hud_control))
 
+    if hud_control.leadDistanceBars != self.lead_distance_bars_last:
+      self.distance_bar_frame = self.frame
+
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if self.CP.flags & VolkswagenFlags.MEB:
         desired_gap = max(1, CS.out.vEgo * 1.5) # TODO gap from OP, get_T_FOLLOW(hud_control.leadDistanceBars))
         distance = 30 if hud_control.leadVisible else 0 # TODO lead distance from model
+        show_distance_bars = self.frame - self.distance_bar_frame < 400
 
         acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                        CS.esp_hold_confirmation, CC.cruiseControl.override or CS.out.gasPressed)
         can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH, hud_control.leadVisible,
-                                                         hud_control.leadDistanceBars, CS.esp_hold_confirmation, distance, desired_gap))
+                                                         hud_control.leadDistanceBars, show_distance_bars, CS.esp_hold_confirmation, distance, desired_gap))
 
       else:
         lead_distance = 0
@@ -239,6 +245,7 @@ class CarController(CarControllerBase):
     new_actuators.curvature = self.apply_curvature_last
     new_actuators.accel = self.accel_last
 
+    self.lead_distance_bars_last = hud_control.leadDistanceBars
     self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
     self.frame += 1
     return new_actuators, can_sends
