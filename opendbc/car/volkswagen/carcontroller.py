@@ -51,7 +51,7 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
-    self.smooth_curv = PT2Filter(25.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
+    self.smooth_curv = PT2Filter(50.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
