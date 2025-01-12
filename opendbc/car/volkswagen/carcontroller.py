@@ -12,7 +12,7 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float) -> Tuple[float, float, float]:
+def get_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float):
   jerk_limit  = 5.0
   factor_up   = 2.0
   factor_down = 3.0
