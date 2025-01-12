@@ -40,7 +40,7 @@ def get_rule_limits(enabled: bool, speed: float, distance: float):
   if not enabled:
     return 0., 0.
   
-  base_limit = np.interp(distance, [5, 100], [rule_limit_min, rule_limit_max]) if distance != 0 else rule_limit_max
+  base_limit = interp(distance, [5, 100], [rule_limit_min, rule_limit_max]) if distance != 0 else rule_limit_max
   upper_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
   lower_speed_factor = interp(speed, [0, 30], [1.0, 0.9])
   raw_upper = base_limit * upper_speed_factor
