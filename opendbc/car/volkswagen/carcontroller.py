@@ -26,7 +26,7 @@ def get_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float
   a_error    = accel - a_ego
   jerk_raw  += a_error * error_gain
   jerk_up    = jerk_raw * factor_up
-  jerk_down  = jerk_raw * factor_down
+  jerk_down  = -jerk_raw * factor_down
   jerk_up    = max(0.0, min(jerk_up, jerk_limit))
   jerk_down  = max(0.0, min(jerk_down, jerk_limit))
 
