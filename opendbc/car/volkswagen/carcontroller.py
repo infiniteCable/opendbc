@@ -11,6 +11,20 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
+def get_jerk_limits(v_ego: float, a_control: float, a_max: float, a_min: float) -> tuple[float, float]:
+  k = 0.5
+  v_threshold = 15.0
+  J_base = 2.0
+  J_min = 4.0
+  J_max = 4.0
+  
+  sf = 1 / (1 + math.exp(-k * (v - v_threshold)))
+  factor = a_control / (a_max if a_control >= 0 else abs(a_min))
+  J_upper = max(0, min(J_min + J_base * sf * factor, J_max))
+  J_lower = max(0, min(J_min - J_base * sf * factor, J_max))
+  return J_upper, J_lower
+
+
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
@@ -148,6 +162,8 @@ class CarController(CarControllerBase):
         accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0
         self.accel_last = accel
 
+        upper_jerk, lower_jerk = get_jerk_limits(CS.out.vEgo, accel, self.CCP.ACCEL_MAX, self.CCP.ACCEL_MIN)
+
         # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
         long_override = CC.cruiseControl.override or CS.out.gasPressed
         self.long_override_counter = min(self.long_override_counter + 1, 5) if long_override else 0
@@ -161,7 +177,7 @@ class CarController(CarControllerBase):
                                                  CS.esp_hold_confirmation, long_override)          
         acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled, upper_jerk, lower_jerk,
                                                            accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
                                                            long_override, CS.travel_assist_available))
 
