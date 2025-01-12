@@ -33,6 +33,24 @@ def get_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float
   return jerk_up, jerk_down, jerk_raw
 
 
+def get_rule_limits(enabled: bool, speed: float, distance: float):
+  rule_limit_min = 0.05
+  rule_limit_max = 0.5
+  
+  if not enabled:
+    return 0., 0.
+  
+  base_limit = np.interp(distance, [5, 100], [rule_limit_min, rule_limit_max]) if distance != 0 else rule_limit_max
+  upper_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
+  lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.9])
+  raw_upper = base_limit * upper_speed_factor
+  raw_lower = base_limit * lower_speed_factor
+  upper_limit = np.clip(raw_upper, rule_limit_min, rule_limit_max)
+  lower_limit = np.clip(raw_lower, rule_limit_min, rule_limit_max)
+    
+  return upper_limit, lower_limit
+
+
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
@@ -176,6 +194,7 @@ class CarController(CarControllerBase):
         accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0
 
         upper_jerk, lower_jerk, self.jerk_last = get_jerk_limits(CC.enabled, accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.jerk_last)
+        upper_rule, lower_rule = get_rule_limits(CC.enabled, CS.out.vEgo, hud_control.leadDistance)
 
         # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
         long_override = CC.cruiseControl.override or CS.out.gasPressed
@@ -192,7 +211,8 @@ class CarController(CarControllerBase):
                                                  CS.esp_hold_confirmation, long_override)          
         acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled, upper_jerk, lower_jerk,
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
+                                                           upper_jerk, lower_jerk, upper_rule, lower_rule,
                                                            accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
                                                            long_override, CS.travel_assist_available))
         self.accel_last = accel
