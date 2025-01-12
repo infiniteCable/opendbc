@@ -59,7 +59,7 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
-    self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
+    self.smooth_curv = PT2Filter(42.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -83,7 +83,7 @@ class CarController(CarControllerBase):
           apply_curvature = self.smooth_curv.update(apply_curvature) # reduce wear on steering system and make it more comfortable
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-            self.smooth_curv.reset(apply_curvature)
+            self.smooth_curv.sync(apply_curvature)
 
           steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX])
           steering_curvature_diff = abs(apply_curvature - current_curvature)
@@ -112,7 +112,7 @@ class CarController(CarControllerBase):
             current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
             apply_curvature = current_curvature # synchronize with current curvature
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEPS, 0)
-          else:
+          else: 
             hca_enabled = False
             apply_curvature = 0. # inactive curvature
             steering_power = 0
