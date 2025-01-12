@@ -188,7 +188,7 @@ def get_desired_gap(distance_bars, desired_gap, current_gap_signal):
   return gap
 
 
-def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, distance_bars, esp_hold, distance, desired_gap):
+def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, distance_bars, show_distance_bars, esp_hold, distance, desired_gap):
 
   values = {
     "ACC_Status_ACC":          acc_control,
@@ -211,6 +211,7 @@ def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, di
     "Zeitluecke_4":            get_desired_gap(distance_bars, desired_gap, 4), # desired distance to lead object for distance bar 4
     "Zeitluecke_5":            get_desired_gap(distance_bars, desired_gap, 5), # desired distance to lead object for distance bar 5
     "Zeitluecke_Farbe":        1 if acc_control in (ACC_HUD_ENABLED, ACC_HUD_ACTIVE, ACC_HUD_OVERRIDE) else 0, # yellow (1) or white (0) time gap
+    "ACC_Anzeige_Zeitluecke":  show_distance_bars if acc_control != ACC_HUD_DISABLED else 0, # show distance bar selection
     "SET_ME_0X1":              0x1,    # unknown
     "SET_ME_0X6A":             0x6A,   # unknown
     "SET_ME_0X3FF":            0x3FF,  # unknown
