@@ -16,7 +16,7 @@ def get_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float
   jerk_limit  = 5.0
   factor_up   = 2.0
   factor_down = 3.0
-  error_gain  = 2.0
+  error_gain  = 0.5
 
   if not enabled:
     return 0., 0., 0.
