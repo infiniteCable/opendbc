@@ -83,6 +83,7 @@ class CarController(CarControllerBase):
           apply_curvature = self.smooth_curv.update(apply_curvature) # reduce wear on steering system and make it more comfortable
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
+            self.smooth_curv.reset(apply_curvature)
 
           steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX])
           steering_curvature_diff = abs(apply_curvature - current_curvature)
