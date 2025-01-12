@@ -115,7 +115,7 @@ def acc_hold_type(main_switch_on, acc_faulted, long_active, starting, stopping, 
   return acc_hold_type
 
 
-def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_control, acc_hold_type, stopping, starting, esp_hold, override, travel_assist_available):
+def create_acc_accel_control(packer, bus, acc_type, acc_enabled, upper_jerk, lower_jerk, accel, acc_control, acc_hold_type, stopping, starting, esp_hold, override, travel_assist_available):
   # active longitudinal control disables one pedal driving (regen mode) while using overriding mechnism
   commands = []
 
@@ -134,8 +134,8 @@ def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_cont
     "ACC_Sollbeschleunigung_02":  acceleration,
     "ACC_zul_Regelabw_unten":     0.0, # synchronize car with OP accel 
     "ACC_zul_Regelabw_oben":      0.0, # synchronize car with OP accel
-    "ACC_neg_Sollbeschl_Grad_02": 4.0 if acc_control == ACC_CTRL_ACTIVE else 0, # ToDo: dynamic jerk limits based on distance if distance is natively available in carcontroller
-    "ACC_pos_Sollbeschl_Grad_02": 4.0 if acc_control == ACC_CTRL_ACTIVE else 0, # ToDo: dynamic jerk limits based on distance if distance is natively available in carcontroller
+    "ACC_neg_Sollbeschl_Grad_02": lower_jerk if acc_control == ACC_CTRL_ACTIVE else 0,
+    "ACC_pos_Sollbeschl_Grad_02": upper_jerk if acc_control == ACC_CTRL_ACTIVE else 0,
     "ACC_Anfahren":               starting,
     "ACC_Anhalten":               stopping,
     "ACC_Anhalteweg":             20.46,
