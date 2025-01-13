@@ -1,7 +1,7 @@
 import math
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
-from opendbc.car.pt2 import PT2Filter
+from opendbc.car.common.pt2 import PT2Filter
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
