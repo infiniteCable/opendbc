@@ -30,7 +30,7 @@ def get_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, je
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(distance: float, has_lead: bool, long_override: bool):
+def get_long_control_limits(speed: float, distance: float, has_lead: bool, long_override: bool):
   lower_limit_factor = 0.048
   lower_limit_min = lower_limit_factor
   lower_limit_max = lower_limit_factor * 6
@@ -38,6 +38,9 @@ def get_long_control_limits(distance: float, has_lead: bool, long_override: bool
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
   lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
+  lower_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
+  lower_limit = lower_limit * lower_speed_factor
+  lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
 
