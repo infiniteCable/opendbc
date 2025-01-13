@@ -12,19 +12,26 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_rule_limits(enabled: bool, speed: float, distance: float):
-  rule_limit_min = 0.05
-  rule_limit_max = 0.5
+def get_long_control_limits(enabled: bool, speed: float, distance: float, has_lead: bool, long_override: bool):
+  lower_limit_factor = 0.048
+  lower_limit_min = lower_limit_factor
+  lower_limit_max = lower_limit_factor * 6
+  upper_limit_factor = 0.0625
   
   if not enabled:
     return 0., 0.
-  
-  base_limit = interp(distance, [5, 100], [rule_limit_min, rule_limit_max]) if distance != 0 else rule_limit_max
-  raw_upper = base_limit * upper_speed_factor
-  raw_lower = base_limit * lower_speed_factor
-  upper_limit = clip(raw_upper, rule_limit_min, rule_limit_max)
-  lower_limit = clip(raw_lower, rule_limit_min, rule_limit_max)
+
+  if has_lead:
+    upper_limit = 0.0
+  elif long_override:
+    upper_limit = upper_limit_factor * 7
+  else:
+    upper_limit = upper_limit_factor * 3
     
+  lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
+  lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
+  lower_limit = math.floor(lower_limit / lower_limit_min) * lower_limit_min
+  
   return upper_limit, lower_limit
 
 
@@ -176,8 +183,6 @@ class CarController(CarControllerBase):
               accel = -1.1
         else:
           accel = 0
-          
-        upper_rule, lower_rule = get_rule_limits(CC.enabled, CS.out.vEgo, hud_control.leadDistance)
 
         # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
         long_override = CC.cruiseControl.override or CS.out.gasPressed
@@ -188,13 +193,13 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        
+        upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.leadDistance, hud_control.leadVisible, long_override)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                  CS.esp_hold_confirmation, long_override)          
         acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled, upper_rule, lower_rule,
+        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled, upper_control_limit, lower_control_limit,
                                                            accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
                                                            long_override, CS.travel_assist_available))
         self.accel_last = accel
