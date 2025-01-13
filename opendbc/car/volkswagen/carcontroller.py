@@ -20,8 +20,6 @@ def get_rule_limits(enabled: bool, speed: float, distance: float):
     return 0., 0.
   
   base_limit = interp(distance, [5, 100], [rule_limit_min, rule_limit_max]) if distance != 0 else rule_limit_max
-  upper_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
-  lower_speed_factor = interp(speed, [0, 30], [1.0, 0.9])
   raw_upper = base_limit * upper_speed_factor
   raw_lower = base_limit * lower_speed_factor
   upper_limit = clip(raw_upper, rule_limit_min, rule_limit_max)
@@ -55,7 +53,7 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
-    self.smooth_curv = PT2Filter(42.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
+    #self.smooth_curv = PT2Filter(42.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -76,10 +74,10 @@ class CarController(CarControllerBase):
           current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
           apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
-          apply_curvature = self.smooth_curv.update(apply_curvature) # reduce wear, better comfort and car stability without reducing steering ability
+          #apply_curvature = self.smooth_curv.update(apply_curvature) # reduce wear, better comfort and car stability without reducing steering ability
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-            self.smooth_curv.sync(apply_curvature)
+            #self.smooth_curv.sync(apply_curvature)
 
           steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX])
           steering_curvature_diff = abs(apply_curvature - current_curvature)
