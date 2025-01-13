@@ -69,6 +69,8 @@ class PT2Filter:
     """
     self.y1 = new_output
     self.y2 = new_output
+    self.u1 = new_output
+    self.u2 = new_output
 
   def reset(self):
     """
