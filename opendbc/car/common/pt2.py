@@ -67,7 +67,6 @@ class PT2Filter:
 
   def sync(self, target: float):
     steps = compute_saturation_steps(self.w0, self.zeta, self.dt)
-    current_y = self.y1
     for i in range(1, steps + 1):
       update(target)
 
