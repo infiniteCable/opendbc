@@ -14,7 +14,10 @@ class PT2Filter:
     zeta: Dämpfungsgrad (zeta=1 => kritisch gedämpft)
     dt:   Abtastzeit [s]
     """
-    self.a1, self.a2, self.b0, self.b1, self.b2 = self._design_pt2(w0, zeta, dt)
+    self.w0   = w0
+    self.zeta = zeta
+    self.dt   = dt
+    self.a1, self.a2, self.b0, self.b1, self.b2 = self._design_pt2(self.w0, self.zeta, self.dt)
     self.y1 = 0.0
     self.y2 = 0.0
     self.u1 = 0.0
@@ -62,15 +65,23 @@ class PT2Filter:
 
     return (a1d, a2d, b0d, b1d, b2d)
 
-  def sync(self, new_output: float):
+  def sync(self, target: float):
+    steps = compute_saturation_steps(self.w0, self.zeta, self.dt)
+    current_y = self.y1
+    for i in range(1, steps + 1):
+      update(target)
+
+  def compute_saturation_steps(self, w0: float, zeta: float, dt: float) -> int:
     """
-    Setzt interne Zustände so,
-    dass der PT2-Ausgang ab sofort = new_output ist.
+    Berechnet eine Abschätzung der Schritte, bis der Filter (95% des Endwerts) erreicht ist.
+    
+    Wir nutzen hier die Abschätzung:
+        T_s = 4 / (zeta * w0)
+    und setzen N = T_s / dt.
     """
-    self.y1 = new_output
-    self.y2 = new_output
-    self.u1 = new_output
-    self.u2 = new_output
+    Ts = 4.0 / (zeta * w0)
+    N = Ts / dt
+    return math.ceil(N)
 
   def reset(self):
     """
