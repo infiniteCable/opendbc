@@ -1661,11 +1661,11 @@ BO_ 768 MEB_ACC_01: 48 XXX
  SG_ Lead_Type : 287|3@1+ (1,0) [0|3] "" XXX
  SG_ Lead_Distance : 290|10@1+ (0.2,0) [0|7] "Unit_Meter" XXX
  SG_ ACC_Events : 332|4@0+ (1,0) [0|3] "Unit_Meter" XXX
- SG_ Zeitluecke_1 : 334|9@1+ (0.185,0) [0|100] "Unit_Meter" XXX
- SG_ Zeitluecke_2 : 344|9@1+ (0.185,0) [0|100] "Unit_Meter" XXX
- SG_ Zeitluecke_3 : 354|9@1+ (0.185,0) [0|100] "Unit_Meter" XXX
- SG_ Zeitluecke_4 : 364|9@1+ (0.185,0) [0|100] "Unit_Meter" XXX
- SG_ Zeitluecke_5 : 374|9@1+ (0.185,0) [0|100] "Unit_Meter" XXX
+ SG_ Zeitluecke_1 : 334|9@1+ (0.171,0) [0|100] "Unit_Meter" XXX
+ SG_ Zeitluecke_2 : 344|9@1+ (0.171,0) [0|100] "Unit_Meter" XXX
+ SG_ Zeitluecke_3 : 354|9@1+ (0.171,0) [0|100] "Unit_Meter" XXX
+ SG_ Zeitluecke_4 : 364|9@1+ (0.171,0) [0|100] "Unit_Meter" XXX
+ SG_ Zeitluecke_5 : 374|9@1+ (0.171,0) [0|100] "Unit_Meter" XXX
 
 BO_ 333 MEB_ACC_02: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
