@@ -191,7 +191,15 @@ class CarController(CarControllerBase):
         # Logic to prevent car error with EPB:
         #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override
         #   * send a few frames of HMS RAMP RELEASE command right at the end of active long control
-        accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0
+        if CC.enabled:
+          accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX)
+          if CS.out.vEgo == 0:
+            if starting:
+              accel = 1.1
+            elif stopping:
+              accel = -1.1
+        else:
+          accel = 0
 
         upper_jerk, lower_jerk, self.jerk_last = get_jerk_limits(CC.enabled, accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.jerk_last)
         upper_rule, lower_rule = get_rule_limits(CC.enabled, CS.out.vEgo, hud_control.leadDistance)
