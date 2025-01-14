@@ -30,7 +30,7 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, distance: float, has_lead: bool, set_speed_change: bool, long_override: bool):
+def get_long_control_limits(speed: float, distance: float, has_lead: bool, long_override: bool):
   lower_limit_factor = 0.048
   lower_limit_min = lower_limit_factor
   lower_limit_max = lower_limit_factor * 6
@@ -40,7 +40,6 @@ def get_long_control_limits(speed: float, distance: float, has_lead: bool, set_s
   lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
   lower_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
   lower_limit = lower_limit * lower_speed_factor
-  lower_limit = lower_limit * 0.8 if set_speed_change else lower_limit
   lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
@@ -64,7 +63,6 @@ class CarController(CarControllerBase):
     self.steering_power_last = 0
     self.accel_last = 0
     self.long_jerk_last = 0
-    self.set_speed_last = 0
     self.long_override_counter = 0
     self.long_disabled_counter = 0
     self.gra_acc_counter_last = None
@@ -92,19 +90,15 @@ class CarController(CarControllerBase):
         if CC.latActive:
           hca_enabled = True
           current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
-          #apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
-          apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
+          apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
+          apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
 
           steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX])
           steering_curvature_diff = abs(apply_curvature - current_curvature)
-          steering_curvature_increase = max(0, abs(apply_curvature) - abs(current_curvature))
-          steering_curvature_decrease = max(0, abs(current_curvature) - abs(apply_curvature))
-          steering_curvature_change = steering_curvature_increase - steering_curvature_decrease
-          steering_curvature_blended = interp(CS.out.vEgoRaw, [0, 5], [steering_curvature_diff, steering_curvature_change])
-          steering_power_target_curvature = steering_power_min_by_speed + self.CCP.CURVATURE_POWER_FACTOR * (steering_curvature_blended + abs(apply_curvature))
+          steering_power_target_curvature = steering_power_min_by_speed + self.CCP.CURVATURE_POWER_FACTOR * (steering_curvature_diff + abs(apply_curvature))
           steering_power_target = clip(steering_power_target_curvature, self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX)
 
           if self.steering_power_last < self.CCP.STEERING_POWER_MIN:  # OP lane assist just activated
@@ -119,8 +113,7 @@ class CarController(CarControllerBase):
             else:
               steering_power = self.steering_power_last
 
-          # reminder: boost slows down steering movement, only allow for movement up from zero
-          steering_power_boost = True if steering_power == self.CCP.STEERING_POWER_MAX and abs(apply_curvature) > abs(current_curvature) else False
+          steering_power_boost = True if steering_power == self.CCP.STEERING_POWER_MAX else False
           
         else:
           steering_power_boost = False
@@ -182,9 +175,6 @@ class CarController(CarControllerBase):
 
     # **** Acceleration Controls ******************************************** #
 
-    if self.frame % 200 == 0:
-      self.set_speed_last = hud_control.setSpeed
-
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
       stopping = actuators.longControlState == LongCtrlState.stopping
       starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
@@ -204,9 +194,7 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        set_speed_change = True if self.set_speed_last != hud_control.setSpeed else False
-
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible, set_speed_change, long_override) if CC.enabled else (0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible, long_override) if CC.enabled else (0, 0)
         upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
