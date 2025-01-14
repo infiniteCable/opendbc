@@ -206,10 +206,8 @@ class CarController(CarControllerBase):
 
         set_speed_change = True if self.set_speed_last != hud_control.setSpeed else False
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible,
-                                                                           set_speed_change, long_override) if CC.enabled else (0, 0)
-        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP,
-                                                                           self.long_jerk_last) if CC.enabled else (0, 0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible, set_speed_change, long_override) if CC.enabled else (0, 0)
+        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                  CS.esp_hold_confirmation, long_override)          
