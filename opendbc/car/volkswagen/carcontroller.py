@@ -30,16 +30,17 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, distance: float, has_lead: bool, long_override: bool):
+def get_long_control_limits(speed: float, distance: float, has_lead: bool, set_speed_change: bool, long_override: bool):
   lower_limit_factor = 0.048
   lower_limit_min = lower_limit_factor
-  lower_limit_max = lower_limit_factor * 5
+  lower_limit_max = lower_limit_factor * 6
   upper_limit_factor = 0.0625
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
   lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
   lower_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
   lower_limit = lower_limit * lower_speed_factor
+  lower_limit = lower_limit * 0.8 if set_speed_change else lower_limit
   lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
@@ -63,6 +64,7 @@ class CarController(CarControllerBase):
     self.steering_power_last = 0
     self.accel_last = 0
     self.long_jerk_last = 0
+    self.set_speed_last = 0
     self.long_override_counter = 0
     self.long_disabled_counter = 0
     self.gra_acc_counter_last = None
@@ -180,6 +182,9 @@ class CarController(CarControllerBase):
 
     # **** Acceleration Controls ******************************************** #
 
+    if self.frame % 200 == 0:
+      self.set_speed_last = hud_control.setSpeed
+
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
       stopping = actuators.longControlState == LongCtrlState.stopping
       starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
@@ -199,8 +204,12 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible, long_override) if CC.enabled else (0, 0)
-        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
+        set_speed_change = True if self.set_speed_last != hud_control.setSpeed else False
+
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.leadDistance, hud_control.leadVisible,
+                                                                           set_speed_change, long_override) if CC.enabled else (0, 0)
+        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP,
+                                                                           self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                  CS.esp_hold_confirmation, long_override)          
