@@ -33,7 +33,7 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
 def get_long_control_limits(speed: float, distance: float, has_lead: bool, long_override: bool):
   lower_limit_factor = 0.048
   lower_limit_min = lower_limit_factor
-  lower_limit_max = lower_limit_factor * 6
+  lower_limit_max = lower_limit_factor * 5
   upper_limit_factor = 0.0625
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
@@ -90,12 +90,11 @@ class CarController(CarControllerBase):
         if CC.latActive:
           hca_enabled = True
           current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
-          apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
+          #apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
           apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-            # self.smooth_curv.sync(apply_curvature)
 
           steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX])
           steering_curvature_diff = abs(apply_curvature - current_curvature)
