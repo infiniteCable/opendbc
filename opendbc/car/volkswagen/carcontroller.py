@@ -40,8 +40,8 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, has
   lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
   lower_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
   set_speed_decrease = max(0, abs(speed) - abs(set_speed))
-  lower_set_speed_diff_factor = interp(set_speed_decrease, [1, 4], [1., 0.])
-  lower_limit = lower_limit * lower_speed_factor * lower_set_speed_diff_factor
+  set_speed_diff_factor = interp(set_speed_decrease, [1, 4], [1., 0.])
+  lower_limit = lower_limit * lower_speed_factor * set_speed_diff_factor
   lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
