@@ -73,7 +73,7 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
-    self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL)
+    self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL) # effectivly adds a small delay, compensate with steering actuator delay)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
