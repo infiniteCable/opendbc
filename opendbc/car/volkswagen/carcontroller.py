@@ -4,7 +4,6 @@ from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
 from opendbc.car.common.pt2 import PT2Filter
 from opendbc.car.common.conversions import Conversions as CV
-from opendbc.car.common.numpy_fast import clip, interp
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan, mebcan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
@@ -38,12 +37,12 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, has
   upper_limit_factor = 0.0625
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
-  lower_limit = interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
-  lower_speed_factor = interp(speed, [0, 30], [1.0, 0.8])
+  lower_limit = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
+  lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
   set_speed_decrease = max(0, abs(speed) - abs(set_speed))
-  set_speed_diff_factor = interp(set_speed_decrease, [1, 4], [1., 0.])
+  set_speed_diff_factor = np.interp(set_speed_decrease, [1, 4], [1., 0.])
   lower_limit = lower_limit * lower_speed_factor * set_speed_diff_factor
-  lower_limit = clip(lower_limit, lower_limit_min, lower_limit_max)
+  lower_limit = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
 
@@ -95,16 +94,16 @@ class CarController(CarControllerBase):
           current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
           apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
           apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
-          apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
+          apply_curvature = np.clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
           if CS.out.steeringPressed: # roughly sync with user input
-            apply_curvature = clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
+            apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
 
-          steering_power_min_by_speed = interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
+          steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
           steering_curvature_increase = max(0, abs(apply_curvature) - abs(current_curvature)) # increase power for increasing steering at normal driving speeds
-          steering_curvature_change = interp(CS.out.vEgoRaw, [0., 3.], [steering_curvature_diff, steering_curvature_increase]) # maximum power seems to inhibit steering movement, decreasing does not increase power
+          steering_curvature_change = np.interp(CS.out.vEgoRaw, [0., 3.], [steering_curvature_diff, steering_curvature_increase]) # maximum power seems to inhibit steering movement, decreasing does not increase power
           steering_power_target_curvature = steering_power_min_by_speed + self.CCP.CURVATURE_POWER_FACTOR * (steering_curvature_change + abs(apply_curvature)) # abs apply_curvature level keeps steering in place
-          steering_power_target = clip(steering_power_target_curvature, self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX)
+          steering_power_target = np.clip(steering_power_target_curvature, self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX)
 
           if self.steering_power_last < self.CCP.STEERING_POWER_MIN:  # OP lane assist just activated
             steering_power = min(self.steering_power_last + self.CCP.STEERING_POWER_STEPS, self.CCP.STEERING_POWER_MIN)
