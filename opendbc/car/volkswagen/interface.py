@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP = [0., 30., 45.]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kf = 1.
-      ret.lateralTuning.pid.kpV = [0.0, 0.18, 0.65]
+      ret.lateralTuning.pid.kpV = [0.0, 0.4, 1.] #[0.0, 0.18, 0.65]
       ret.lateralTuning.pid.kiV = [0.00001]
     else:
       ret.steerActuatorDelay = 0.1
@@ -96,7 +96,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & VolkswagenFlags.MEB:
       ret.longitudinalActuatorDelay = 0.2
-      ret.radarDelay = 1.0 # testing, radar is lazy
+      #ret.radarDelay = 0.2 # testing
 
     ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
     if experimental_long:
