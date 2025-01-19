@@ -31,7 +31,7 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, set_speed: float, distance: float, distance_last: float, long_override: bool):
+def get_long_control_limits(speed: float, set_speed: float, distance: float, long_override: bool):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
   lower_limit_factor = 0.048 # known from car (car mostly sets discrete limits)
@@ -43,14 +43,11 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, dis
   
   set_speed_decrease    = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user (includes real speed difference!)
   set_speed_diff_abs    = abs(speed - set_speed) # set speed difference in both directions
-  set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # assume speed overshoot is prevented by lead, we want to prevent overshoot without lead 
-  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and no speed overshoot downhill without lead car 
-  distance_diff         = distance - distance_last if distance != 0 else 0 # for modification based on distance change direction
-  dist_chng_direct_mod  = -lower_limit_factor * 1 if distance_diff < 0 else 0 # faster reaction if a target is approached
+  set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # comfort driving behind lead, prevent overshoot without lead 
+  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and less speed overshoot downhill without lead car 
   speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
-  
-  lower_limit           = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
-  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor + dist_chng_direct_mod
+  lower_limit           = np.interp(distance, [5, 50], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
+  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor
   lower_limit           = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
@@ -74,7 +71,6 @@ class CarController(CarControllerBase):
     self.steering_power_last = 0
     self.accel_last = 0
     self.long_jerk_last = 0
-    self.distance_last = 0
     self.long_override_counter = 0
     self.long_disabled_counter = 0
     self.gra_acc_counter_last = None
@@ -209,7 +205,7 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, self.distance_last, long_override) if CC.enabled else (0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, long_override) if CC.enabled else (0, 0)
         upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
@@ -221,7 +217,6 @@ class CarController(CarControllerBase):
                                                            accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
                                                            long_override, CS.travel_assist_available))
         self.accel_last = accel
-        self.distance_last = hud_control.leadDistance
 
       else:
         accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
