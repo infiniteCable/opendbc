@@ -39,13 +39,13 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, dis
   lower_limit_max    = lower_limit_factor * 6
   upper_limit_factor = 0.0625 # known from car
   
-  upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
+  upper_limit = 0.0 if distance != 0 else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
   
   set_speed_decrease    = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user (includes real speed difference!)
   set_speed_diff_abs    = abs(speed - set_speed) # set speed difference in both directions
   set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # assume speed overshoot is prevented by lead, we want to prevent overshoot without lead 
   set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and no speed overshoot downhill without lead car 
-  distance_diff         = distance - distance_last # for modification based on distance change direction
+  distance_diff         = distance - distance_last if distance != 0 else 0 # for modification based on distance change direction
   dist_chng_direct_mod  = -lower_limit_factor * 1 if distance_diff < 0 else 0 # faster reaction if a target is approached
   speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
   
