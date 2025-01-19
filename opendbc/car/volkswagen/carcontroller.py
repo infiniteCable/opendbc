@@ -37,10 +37,14 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, has
   upper_limit_factor = 0.0625
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
-  lower_limit = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
+  
   lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
   set_speed_decrease = max(0, abs(speed) - abs(set_speed))
-  set_speed_diff_factor = np.interp(set_speed_decrease, [1, 4], [1., 0.])
+  set_speed_diff_abs = abs(speed - set_speed)
+  set_speed_diff = set_speed_decrease if has_lead else set_speed_diff_abs
+  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.])
+  lower_limit = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
+  lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
   lower_limit = lower_limit * lower_speed_factor * set_speed_diff_factor
   lower_limit = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
