@@ -46,7 +46,7 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float, dis
   set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # assume speed overshoot is prevented by lead, we want to prevent overshoot without lead 
   set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and no speed overshoot downhill without lead car 
   distance_diff         = distance - distance_last # for modification based on distance change direction
-  dist_chng_direct_mod  = -lower_limit_factor * 2 if distance_diff < 0 else 0 # faster reaction if a target is approached
+  dist_chng_direct_mod  = -lower_limit_factor * 1 if distance_diff < 0 else 0 # faster reaction if a target is approached
   speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
   
   lower_limit           = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
