@@ -30,23 +30,23 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, set_speed: float, distance: float, has_lead: bool, long_override: bool):
-  lower_limit_factor = 0.048
-  lower_limit_min = lower_limit_factor
-  lower_limit_max = lower_limit_factor * 6
-  upper_limit_factor = 0.0625
+def get_long_control_limits(accel: float, speed: float, set_speed: float, distance: float, long_override: bool):
+  lower_limit_factor = 0.048 # known from car (car mostly sets discrete limits)
+  lower_limit_min    = lower_limit_factor
+  lower_limit_max    = lower_limit_factor * 6
+  upper_limit_factor = 0.0625 # known from car
   
   upper_limit = 0.0 if has_lead else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
   
-  lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
-  set_speed_decrease = max(0, abs(speed) - abs(set_speed))
-  set_speed_diff_abs = abs(speed - set_speed)
-  set_speed_diff = set_speed_decrease if has_lead else set_speed_diff_abs
-  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.])
-  lower_limit = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max
-  lower_speed_factor = np.interp(speed, [0, 30], [1.0, 0.8])
-  lower_limit = lower_limit * lower_speed_factor * set_speed_diff_factor
-  lower_limit = np.clip(lower_limit, lower_limit_min, lower_limit_max)
+  set_speed_decrease    = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user (includes real speed difference!)
+  set_speed_diff_abs    = abs(speed - set_speed) # set speed difference in both directions
+  set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # assume speed overshoot is prevented by lead, we want to prevent overshoot without lead 
+  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and no speed overshoot downhill without lead car 
+  accel_factor          = np.interp(accel, [-3, 0], [0.8, 1.]) # limits control limits for higher accel to keep near OP requested accel
+  speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
+  lower_limit           = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
+  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor * accel_factor
+  lower_limit           = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
 
