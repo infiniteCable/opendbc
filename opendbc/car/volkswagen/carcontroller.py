@@ -203,7 +203,7 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, hud_control.leadVisible, long_override) if CC.enabled else (0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(accel, CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, long_override) if CC.enabled else (0, 0)
         upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
