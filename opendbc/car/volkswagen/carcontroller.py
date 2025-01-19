@@ -31,7 +31,7 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(accel: float, speed: float, set_speed: float, distance: float, distance_last: float, long_override: bool):
+def get_long_control_limits(speed: float, set_speed: float, distance: float, distance_last: float, long_override: bool):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
   lower_limit_factor = 0.048 # known from car (car mostly sets discrete limits)
@@ -47,11 +47,10 @@ def get_long_control_limits(accel: float, speed: float, set_speed: float, distan
   set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and no speed overshoot downhill without lead car 
   distance_diff         = distance - distance_last # for modification based on distance change direction
   dist_chng_direct_mod  = -lower_limit_factor * 2 if distance_diff < 0 else 0 # faster reaction if a target is approached
-  accel_factor          = np.interp(accel, [-3, 0], [0.8, 1.]) # limits control limits for higher accel to keep near OP requested accel
   speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
   
   lower_limit           = np.interp(distance, [5, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
-  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor * accel_factor + dist_chng_direct_mod
+  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor + dist_chng_direct_mod
   lower_limit           = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
@@ -210,7 +209,7 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(accel, CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, self.distance_last, long_override) if CC.enabled else (0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, self.distance_last, long_override) if CC.enabled else (0, 0)
         upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
