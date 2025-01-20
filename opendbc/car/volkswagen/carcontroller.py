@@ -34,17 +34,17 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
 def get_long_control_limits(speed: float, set_speed: float, distance: float, long_override: bool):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
-  lower_limit_factor = 0.048 # known from car (car mostly sets discrete limits)
-  lower_limit_min    = lower_limit_factor
-  lower_limit_max    = lower_limit_factor * 6
-  upper_limit_factor = 0.0625 # known from car
+  lower_limit_factor = 0.024
+  lower_limit_min    = lower_limit_factor * 2
+  lower_limit_max    = lower_limit_factor * 12
+  upper_limit_factor = 0.0625
   
   upper_limit = 0.0 if distance != 0 else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
   
   set_speed_decrease    = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user (includes real speed difference!)
   set_speed_diff_abs    = abs(speed - set_speed) # set speed difference in both directions
   set_speed_diff        = set_speed_decrease if distance != 0 else set_speed_diff_abs # comfort driving behind lead, prevent overshoot without lead 
-  set_speed_diff_factor = np.interp(set_speed_diff, [1, 3], [1., 0.]) # for faster requested speed decrease and less speed overshoot downhill without lead car 
+  set_speed_diff_factor = np.interp(set_speed_diff, [1, 2], [1., 0.]) # for faster requested speed decrease and less speed overshoot downhill without lead car 
   speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
   lower_limit           = np.interp(distance, [5, 50], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
   lower_limit           = lower_limit * speed_factor * set_speed_diff_factor
