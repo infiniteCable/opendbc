@@ -31,21 +31,24 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, set_speed: float, distance: float, long_override: bool):
+def get_long_control_limits(speed: float, set_speed: float, distance: float):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
+  # set control limits to zero when override because OP accel 0 results in hard accel cuts (in mebcan.py at the moment)
+  # -> this results in a quasi accel steady state and overwrite acceptance after a little bit harder pedal press (better comfort)
   lower_limit_factor = 0.048
   lower_limit_min    = lower_limit_factor
-  lower_limit_max    = lower_limit_factor * 7
+  lower_limit_max    = lower_limit_factor * 6
   upper_limit_factor = 0.0625
+  upper_limit_min    = 0.
+  upper_limit_max    = upper_limit_factor * 2
   
-  upper_limit = 0.0 if distance != 0 else (upper_limit_factor * 7 if long_override else upper_limit_factor * 3)
+  upper_limit = np.interp(distance, [0, 100], [upper_limit_min, upper_limit_max]) # base line based on distance
   
   set_speed_decrease    = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user or speed overshoot (includes hud - real speed difference!)
-  set_speed_diff_factor = np.interp(set_speed_decrease, [1, 2], [1., 0.]) # faster requested speed decrease and less speed overshoot downhill 
-  speed_factor          = np.interp(speed, [0, 30], [1.0, 0.8]) # limits control limits for higher speed for faster reaction
-  lower_limit           = np.interp(distance, [0, 100], [lower_limit_min, lower_limit_max]) if distance != 0 else lower_limit_max # base line based on distance
-  lower_limit           = lower_limit * speed_factor * set_speed_diff_factor
+  set_speed_diff_factor = np.interp(set_speed_decrease, [1, 1.75], [1., 0.]) # faster requested speed decrease and less speed overshoot downhill 
+  lower_limit           = np.interp(distance, [0, 100], [lower_limit_min, lower_limit_max]) # base line based on distance
+  lower_limit           = lower_limit * set_speed_diff_factor
   lower_limit           = np.clip(lower_limit, lower_limit_min, lower_limit_max)
   
   return upper_limit, lower_limit
@@ -203,7 +206,7 @@ class CarController(CarControllerBase):
         self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance, long_override) if CC.enabled else (0, 0)
+        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance) if CC.enabled else (0, 0)
         upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
