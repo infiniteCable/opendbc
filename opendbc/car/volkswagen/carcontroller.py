@@ -12,23 +12,27 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float):
+def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
   # jerk limit are used to improve comfort
-  # set jerk limits to zero when override because OP accel 0 results in hard accel cuts (in mebcan.py at the moment)
-  # -> this results in a quasi accel steady state and overwrite acceptance after a little bit harder pedal press (better comfort)
-  jerk_limit  = 5.0
-  factor_up   = 2.0
+  jerk_limit = 5.0
+  factor_up = 2.0
   factor_down = 3.0
-  error_gain  = 0.5
+  error_gain = 0.5
+  jerk_decay_time = 1.0 
 
-  accel_diff = (accel - accel_last) / dt
-  jerk_raw   = 0.9 * jerk_prev + 0.1 * accel_diff
-  a_error    = accel - a_ego
-  jerk_raw  += a_error * error_gain
-  jerk_up    = jerk_raw * factor_up
-  jerk_down  = -jerk_raw * factor_down
-  jerk_up    = max(0.0, min(jerk_up, jerk_limit))
-  jerk_down  = max(0.0, min(jerk_down, jerk_limit))
+  if override:
+    decay_rate = -math.log(0.01) / jerk_decay_time
+    jerk_raw = jerk_prev * math.exp(-decay_rate * dt)
+  else:
+    accel_diff = (accel - accel_last) / dt
+    jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
+    a_error = accel - a_ego
+    jerk_raw += a_error * error_gain
+      
+  jerk_up = jerk_raw * factor_up
+  jerk_down = -jerk_raw * factor_down
+  jerk_up = max(0.0, min(jerk_up, jerk_limit))
+  jerk_down = max(0.0, min(jerk_down, jerk_limit))
 
   return jerk_up, jerk_down, jerk_raw
 
@@ -207,7 +211,7 @@ class CarController(CarControllerBase):
         long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
         upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance) if CC.enabled else (0, 0)
-        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last) if CC.enabled else (0, 0, 0)
+        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override) if CC.enabled else (0, 0, 0)
         
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                  CS.esp_hold_confirmation, long_override)          
