@@ -321,7 +321,7 @@ class CarState(CarStateBase):
     # and capture it for forwarding to the blind spot radar controller
     self.ldw_stock_values = cam_cp.vl["LDW_02"] if self.CP.networkLocation == NetworkLocation.fwdCamera else {}
 
-    ret.stockFcw = bool(pt_cp.vl["MEB_ESP_05"]["FCW_Active"])
+    ret.stockFcw = bool(pt_cp.vl["MEB_ESP_05"]["FCW_Active"]) or ext_cp.vl["MEB_ACC_01"]["ACC_rel_Objekt_Zusatzanz"] == 2
     ret.stockAeb = bool(pt_cp.vl["MEB_ESP_05"]["AEB_Active"])
 
     self.acc_type = ext_cp.vl["MEB_ACC_02"]["ACC_Typ"]
