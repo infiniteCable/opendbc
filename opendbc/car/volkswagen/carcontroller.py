@@ -19,16 +19,15 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
   # -> set comfortable jerks
   jerk_limit = 5.0
-  jerk_limit_up_min = 0.6
-  jerk_limit_down_min = 0.5
+  jerk_limit_min = 0.5
   factor_up = 2.0
   factor_down = 3.0
-  error_gain = 0.5
+  error_gain = 0.6
 
   if override:
     jerk_raw = 0.
-    jerk_up = jerk_limit_up_min
-    jerk_down = jerk_limit_down_min
+    jerk_up = jerk_limit_min
+    jerk_down = jerk_limit_min
   else:
     accel_diff = (accel - accel_last) / dt
     jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
@@ -36,8 +35,8 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
     jerk_raw += a_error * error_gain
     jerk_up = jerk_raw * factor_up
     jerk_down = -jerk_raw * factor_down
-    jerk_up = max(jerk_limit_up_min, min(jerk_up, jerk_limit))
-    jerk_down = max(jerk_limit_down_min, min(jerk_down, jerk_limit))
+    jerk_up = max(jerk_limit_min, min(jerk_up, jerk_limit))
+    jerk_down = max(jerk_limit_min, min(jerk_down, jerk_limit))
 
   return jerk_up, jerk_down, jerk_raw
 
