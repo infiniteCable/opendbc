@@ -14,29 +14,32 @@ LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
   # jerk limit are used to improve comfort
-  # override mechanics:
-  # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press
-  # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut
-  # we want to softly apply zero jerk in a way to reduce the effective current accel a little bit for more comfort and more control
+  # override mechanics reminder:
+  # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
+  # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
+  # -> set specific jerks seen in vw acc
   jerk_limit = 5.0
+  jerk_limit_up_override = 1.0
+  jerk_limit_down_override = 0.2
+  jerk_limit_up_min = 0.6
+  jerk_limit_down_min = 0.5
   factor_up = 2.0
   factor_down = 3.0
   error_gain = 0.5
-  jerk_decay_time = 2.0 
 
   if override:
-    decay_rate = dt / jerk_decay_time
-    jerk_raw = jerk_prev * (1.0 - decay_rate)
+    jerk_raw = 0.
+    jerk_up = jerk_limit_up_override
+    jerk_down = jerk_limit_down_override
   else:
     accel_diff = (accel - accel_last) / dt
     jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
     a_error = accel - a_ego
     jerk_raw += a_error * error_gain
-      
-  jerk_up = jerk_raw * factor_up
-  jerk_down = -jerk_raw * factor_down
-  jerk_up = max(0.0, min(jerk_up, jerk_limit))
-  jerk_down = max(0.0, min(jerk_down, jerk_limit))
+    jerk_up = jerk_raw * factor_up
+    jerk_down = -jerk_raw * factor_down
+    jerk_up = max(jerk_limit_up_min, min(jerk_up, jerk_limit))
+    jerk_down = max(jerk_limit_down_min, min(jerk_down, jerk_limit))
 
   return jerk_up, jerk_down, jerk_raw
 
