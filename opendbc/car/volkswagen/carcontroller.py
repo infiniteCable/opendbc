@@ -17,10 +17,8 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
   # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
-  # -> set specific jerks seen in vw acc
+  # -> set comfortable jerks
   jerk_limit = 5.0
-  jerk_limit_up_override = 1.0
-  jerk_limit_down_override = 0.2
   jerk_limit_up_min = 0.6
   jerk_limit_down_min = 0.5
   factor_up = 2.0
@@ -29,8 +27,8 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
 
   if override:
     jerk_raw = 0.
-    jerk_up = jerk_limit_up_override
-    jerk_down = jerk_limit_down_override
+    jerk_up = jerk_limit_up_min
+    jerk_down = jerk_limit_down_min
   else:
     accel_diff = (accel - accel_last) / dt
     jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
