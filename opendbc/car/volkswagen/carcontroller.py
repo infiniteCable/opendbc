@@ -22,11 +22,11 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   factor_up = 2.0
   factor_down = 3.0
   error_gain = 0.5
-  jerk_decay_time = 1.0 
+  jerk_decay_time = 2.0 
 
   if override:
-    decay_rate = -math.log(0.01) / jerk_decay_time
-    jerk_raw = jerk_prev * math.exp(-decay_rate * dt)
+    decay_rate = dt / jerk_decay_time
+    jerk_raw = jerk_prev * (1.0 - decay_rate)
   else:
     accel_diff = (accel - accel_last) / dt
     jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
