@@ -89,6 +89,8 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.battery_heater_last = False
+    self.battery_heater_frame = 0
     self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL) # effectivly adds a small delay, compensate with steering actuator delay)
 
   def update(self, CC, CS, now_nanos):
@@ -238,6 +240,9 @@ class CarController(CarControllerBase):
 
     # **** HUD Controls ***************************************************** #
 
+    if CS.battery_heater_active != self.battery_heater_last:
+      self.battery_heater_frame = self.frame
+
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0
       sound_alert = 0
@@ -246,6 +251,7 @@ class CarController(CarControllerBase):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOverUrgent"]
         sound_alert = 1
       if self.CP.flags & VolkswagenFlags.MEB:
+        sound_alert = sound_alert or (self.frame - self.battery_heater_frame < 400)
         can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.latActive,
                                                          CS.out.steeringPressed, hud_alert, hud_control, sound_alert))
       else:
@@ -264,7 +270,7 @@ class CarController(CarControllerBase):
                                                        CS.esp_hold_confirmation, CC.cruiseControl.override or CS.out.gasPressed)
         can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
                                                          hud_control.leadVisible, hud_control.leadDistanceBars + 1, show_distance_bars,
-                                                         CS.esp_hold_confirmation, distance, gap, CS.battery_heater_active))
+                                                         CS.esp_hold_confirmation, distance, gap))
 
       else:
         lead_distance = 0
