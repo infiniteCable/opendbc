@@ -198,6 +198,7 @@ def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, di
     "ACC_Display_Prio":        1,
     "ACC_Abstandsindex_02":    569,
     "ACC_Texte_Primaeranz_02": 45 if battery_heater_active else 0,
+    "ACC_Regelung_AIO":        1 if battery_heater_active else 0,
     "ACC_EGO_Fahrzeug":        1 if acc_control == ACC_HUD_ACTIVE else 0,
     "Lead_Type_Detected":      1 if lead_visible else 0, # object should be displayed
     "Lead_Type":               3 if lead_visible else 0, # displaying a car
