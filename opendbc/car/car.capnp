@@ -239,17 +239,17 @@ struct CarState {
   batteryDetails @57 :BatteryDetails;
 
   struct BatteryDetails {
-    heater_active @0 :Bool;
+    heaterActive @0 :Bool;
     capacity @1 :Float32;
     charge @2 :Float32;
     soc @3 :Float32;
     temperature @4 :Float32;
-    cell_voltage @5 :Float32;
+    cellVoltage @5 :Float32;
     voltage @6 :Float32;
     current @7 :Float32;
-    current_max @8 :Float32;
+    currentMax @8 :Float32;
     power @9 :Float32;
-    power_max @10 :Float32;
+    powerMax @10 :Float32;
   }
 
   struct WheelSpeeds {
