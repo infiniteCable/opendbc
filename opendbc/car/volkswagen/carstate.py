@@ -17,7 +17,6 @@ class CarState(CarStateBase):
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
-    self.battery_heater_active = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []
@@ -365,7 +364,7 @@ class CarState(CarStateBase):
     # EV battery charge WattHours
     ret.fuelGauge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"]
 
-    ret.batteryDetails.heater_active = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
+    ret.batteryDetails.heaterActive = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
     ret.batteryDetails.charge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"] # EV battery charge WattHours
     
     self.frame += 1
