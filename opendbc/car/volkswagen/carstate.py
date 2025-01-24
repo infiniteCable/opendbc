@@ -365,8 +365,9 @@ class CarState(CarStateBase):
     # EV battery charge WattHours
     ret.fuelGauge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"]
 
-    self.battery_heater_active = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
-
+    ret.batteryDetails.heater_active = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
+    ret.batteryDetails.charge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"] # EV battery charge WattHours
+    
     self.frame += 1
     return ret
 
