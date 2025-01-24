@@ -240,7 +240,7 @@ class CarController(CarControllerBase):
 
     # **** HUD Controls ***************************************************** #
 
-    if CS.battery_heater_active != self.battery_heater_last:
+    if CS.out.batteryDetails.heaterActive != self.battery_heater_last:
       self.battery_heater_frame = self.frame
 
     if self.frame % self.CCP.LDW_STEP == 0:
@@ -295,7 +295,7 @@ class CarController(CarControllerBase):
     new_actuators.curvature = float(self.apply_curvature_last)
     new_actuators.accel = self.accel_last
 
-    self.battery_heater_last = CS.battery_heater_active
+    self.battery_heater_last = CS.out.batteryDetails.heaterActive
     self.lead_distance_bars_last = hud_control.leadDistanceBars
     self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
     self.frame += 1
