@@ -235,6 +235,9 @@ struct CarState {
   # process meta
   cumLagMs @50 :Float32;
 
+  # battery data
+  batteryDetails @57 :BatteryDetails;
+
   struct BatteryDetails {
     heater_active @0 :Bool;
     capacity @1 :Float32;
