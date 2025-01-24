@@ -235,6 +235,20 @@ struct CarState {
   # process meta
   cumLagMs @50 :Float32;
 
+  struct BatteryDetails {
+    heater_active @0 :Bool;
+    capacity @1 :Float32;
+    charge @2 :Float32;
+    soc @3 :Float32;
+    temperature @4 :Float32;
+    cell_voltage @5 :Float32;
+    voltage @6 :Float32;
+    current @7 :Float32;
+    current_max @8 :Float32;
+    power @9 :Float32;
+    power_max @10 :Float32;
+  }
+
   struct WheelSpeeds {
     # optional wheel speeds
     fl @0 :Float32;

@@ -17,6 +17,7 @@ class CarState(CarStateBase):
     self.esp_hold_confirmation = False
     self.upscale_lead_car_signal = False
     self.eps_stock_values = False
+    self.battery_heater_active = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []
@@ -34,13 +35,14 @@ class CarState(CarStateBase):
 
   def update(self, can_parsers) -> structs.CarState:
     pt_cp = can_parsers[Bus.pt]
+    main_cp = can_parsers[Bus.main]
     cam_cp = can_parsers[Bus.cam]
     ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
 
     if self.CP.flags & VolkswagenFlags.PQ:
       return self.update_pq(pt_cp, cam_cp, ext_cp)
     elif self.CP.flags & VolkswagenFlags.MEB:
-      return self.update_meb(pt_cp, cam_cp, ext_cp)
+      return self.update_meb(pt_cp, main_cp, cam_cp, ext_cp)
 
     ret = structs.CarState()
     # Update vehicle speed and acceleration from ABS wheel speeds.
@@ -260,7 +262,7 @@ class CarState(CarStateBase):
     self.frame += 1
     return ret
     
-  def update_meb(self, pt_cp, cam_cp, ext_cp) -> structs.CarState:
+  def update_meb(self, pt_cp, main_cp, cam_cp, ext_cp) -> structs.CarState:
     ret = structs.CarState()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -362,6 +364,8 @@ class CarState(CarStateBase):
 
     # EV battery charge WattHours
     ret.fuelGauge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"]
+
+    self.battery_heater_active = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
 
     self.frame += 1
     return ret
@@ -512,6 +516,10 @@ class CarState(CarStateBase):
       if CP.enableBsm:
         pt_messages += MebExtraSignals.bsm_radar_messages
 
+    main_messages = []
+    if CP.networkLocation == NetworkLocation.gateway:
+      main_messages += MebExtraSignals.main_messages
+
     cam_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       cam_messages += [
@@ -528,6 +536,7 @@ class CarState(CarStateBase):
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CANBUS.pt),
+      Bus.main: CANParser(DBC[CP.carFingerprint][Bus.pt], main_messages, CANBUS.main),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, CANBUS.cam),
     }
 
@@ -567,4 +576,7 @@ class MebExtraSignals:
   ]
   travel_assist_message = [
     ("MEB_Travel_Assist_01", 10), #
+  ]
+  main_messages = [
+    ("MEB_HVEM_Bat_PTC", 100), #
   ]
