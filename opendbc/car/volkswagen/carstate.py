@@ -364,8 +364,14 @@ class CarState(CarStateBase):
     # EV battery charge WattHours
     ret.fuelGauge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"]
 
-    ret.batteryDetails.heaterActive = main_cp.vl["MEB_HVEM_Bat_PTC"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False
-    ret.batteryDetails.charge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"] # EV battery charge WattHours
+    # EV battery details
+    ret.batteryDetails.heaterActive = main_cp.vl["MEB_HVEM_01"]["PTC_Status"] == 1 if self.CP.networkLocation == NetworkLocation.gateway else False # battery heater
+    ret.batteryDetails.charge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"] # battery charge WattHours
+    ret.batteryDetails.soc = main_cp.vl["MEB_HVEM_01"]["Battery_SoC"] if self.CP.networkLocation == NetworkLocation.gateway else 0 # battery SoC in percent
+    ret.batteryDetails.voltage = 400 # battery output voltage
+    ret.batteryDetails.capacity = main_cp.vl["BMS_04"]["BMS_Kapazitaet_02"] * ret.batteryDetails.capacity if self.CP.networkLocation == NetworkLocation.gateway else 0 # EV battery capacity WattHours
+    ret.batteryDetails.power = main_cp.vl["MEB_HVEM_01"]["Engine_Power"] if self.CP.networkLocation == NetworkLocation.gateway else 0 # engine power output
+    ret.batteryDetails.temperature = main_cp.vl["DCDC_03"]["DC_Temperatur"] if self.CP.networkLocation == NetworkLocation.gateway else 0 # battery temperature
     
     self.frame += 1
     return ret
@@ -578,5 +584,7 @@ class MebExtraSignals:
     ("MEB_Travel_Assist_01", 10), #
   ]
   main_messages = [
-    ("MEB_HVEM_Bat_PTC", 100), #
+    ("MEB_HVEM_01", 100), #
+    ("BMS_04", 2), #
+    ("DCDC_03", 2), #
   ]
