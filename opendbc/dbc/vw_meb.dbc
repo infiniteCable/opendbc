@@ -1717,15 +1717,18 @@ BO_ 387 MEB_Camera_01: 64 XXX
  SG_ Lane_Center_Offset : 256|12@1+ (0.001,-2.5) [0|255] "Unit_Meter" XXX
  SG_ NEW_SIGNAL_6 : 268|12@1+ (1,0) [0|255] "" XXX
 
-BO_ 190 MEB_HVEM_Bat_PTC: 48 XXX
+BO_ 190 MEB_HVEM_01: 48 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Engine_RPM_Max : 12|14@1+ (1,-4829) [0|15] "RPM" XXX
+ SG_ Engine_RPM_Min : 26|14@1+ (1,-5150) [0|63] "RPM" XXX
+ SG_ Engine_Power : 56|12@1+ (0.5,-1023) [0|255] "kW" XXX
+ SG_ NEW_SIGNAL_1 : 72|10@1+ (1,0) [0|255] "" XXX
  SG_ Unknown_01 : 86|6@1+ (1,0) [0|3] "" XXX
  SG_ PTC_Status : 92|2@1+ (1,0) [0|3] "" XXX
- SG_ Unknown_02 : 100|3@1+ (1,0) [0|7] "" XXX
- SG_ PTC_Power_Control : 113|7@1+ (1,0) [0|127] "" XXX
+ SG_ Unknown_02 : 100|8@1+ (1,0) [0|7] "" XXX
+ SG_ Battery_SoC : 112|10@1+ (0.1,0) [0|127] "" XXX
  SG_ Unknown_03 : 360|24@1+ (1,0) [0|255] "" XXX
-
 
 VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active" 8 "preempted";
 VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "D" 10 "E" 13 "T" 14 "T";
