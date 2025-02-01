@@ -322,10 +322,10 @@ class CarState(CarStateBase):
     # and capture it for forwarding to the blind spot radar controller
     self.ldw_stock_values = cam_cp.vl["LDW_02"] if self.CP.networkLocation == NetworkLocation.fwdCamera else {}
 
-    ret.stockFcw = bool(pt_cp.vl["VMM_02"]["FCW_Active"]) or ext_cp.vl["MEB_ACC_01"]["ACC_rel_Objekt_Zusatzanz"] == 2
+    ret.stockFcw = bool(pt_cp.vl["VMM_02"]["FCW_Active"]) or get_acc_warning_meb(ext_cp.vl["MEB_ACC_01"])
     ret.stockAeb = bool(pt_cp.vl["VMM_02"]["AEB_Active"])
 
-    self.acc_type = ext_cp.vl["MEB_ACC_02"]["ACC_Typ"]
+    self.acc_type = ext_cp.vl["ACC_18"]["ACC_Typ"]
     self.travel_assist_available = bool(ext_cp.vl["TA_01"]["Travel_Assist_Available"]) if self.CP.flags & VolkswagenFlags.TRAVEL_ASSIST_PRESENT else False
 
     ret.cruiseState.available = pt_cp.vl["Motor_51"]["TSK_Status"] in (2, 3, 4, 5)
@@ -384,6 +384,16 @@ class CarState(CarStateBase):
     perm_fault = hca_status == "DISABLED" or (self.eps_init_complete and hca_status in ("INITIALIZING", "FAULT"))
     temp_fault = hca_status in ("REJECTED", "PREEMPTED") or not self.eps_init_complete
     return temp_fault, perm_fault
+
+  def get_acc_warning_meb(self, acc_hud):
+    # this works as long our radar does not fault while using OP
+    if (acc_hud["ACC_Status_ACC"] in (3, 4) # ACC active or in override mode
+        and acc_hud["ACC_EGO_Fahrzeug"] == 2 # a warning for the lead car is active
+        and acc_hud["ACC_Optischer_Fahrerhinweis"] != 0 # there is an optical warning
+        and acc_hud["ACC_Akustischer_Fahrerhinweis"] != 0 # there is a sound warning
+        and acc_hud["ACC_Display_Prio"] == 0): # this warning has highest priority
+      return True
+    return False
 
   @staticmethod
   def get_can_parsers(CP):
@@ -575,7 +585,7 @@ class MebExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_messages = [
     ("MEB_ACC_01", 17),
-    ("MEB_ACC_02", 50),
+    ("ACC_18", 50),
     #("MEB_Distance_01", 25),
   ]
   bsm_radar_messages = [
