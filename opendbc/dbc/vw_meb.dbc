@@ -1655,7 +1655,7 @@ BO_ 768 MEB_ACC_01: 48 XXX
  SG_ Zeitluecke_Farbe : 189|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_0X1 : 199|1@0+ (1,0) [0|1] "" XXX
  SG_ ACC_Status_ACC : 208|3@1+ (1,0) [0|7] "" XXX
- SG_ Unknown_04 : 211|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_Akustischer_Fahrerhinweis : 211|2@1+ (1,0) [0|1] "" XXX
  SG_ Unknown_08 : 224|1@0+ (1,0) [0|1] "" XXX
  SG_ Unknown_01 : 225|1@0+ (1,0) [0|1] "" XXX
  SG_ Unknown_06 : 226|1@0+ (1,0) [0|1] "" XXX
