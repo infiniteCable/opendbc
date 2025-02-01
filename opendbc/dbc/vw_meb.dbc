@@ -1469,7 +1469,8 @@ BO_ 1355 Parkhilfe_04: 8 Gateway
  SG_ PDC_Charisma_FahrPr : 60|4@1+ (1,0) [0|15] "" Vector__XXX
 
 BO_ 896 MEB_PDC_01: 8 XXX
- SG_ Distance : 54|10@1+ (1,0) [0|255] "" XXX
+ SG_ Active : 54|1@0+ (1,0) [0|1] "" XXX
+ SG_ Distance : 55|9@1+ (1,0) [0|255] "" XXX
 
 BO_ 252 MEB_ESP_01: 48 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
@@ -1618,7 +1619,7 @@ BO_ 591 MEB_Distance_01: 64 XXX
  SG_ Unknown_05 : 264|6@1+ (1,-15) [0|31] "" XXX
  SG_ Unknown_06 : 270|6@1+ (1,0) [0|127] "" XXX
  SG_ Unknown_07 : 277|6@1+ (1,0) [0|7] "" XXX
- SG_ Unknown_08 : 286|3@0+ (1,0) [0|1] "" XXX
+ SG_ Unknown_08 : 284|6@1+ (1,0) [0|1] "" XXX
 
 BO_ 219 MEB_AEB_01: 48 XXX
  SG_ CHK : 0|8@1+ (1,0) [0|255] "" XXX
