@@ -147,7 +147,7 @@ def create_acc_accel_control(packer, bus, acc_type, acc_enabled, upper_jerk, low
     "SET_ME_0X9":                 0x9,
   }
 
-  commands.append(packer.make_can_msg("MEB_ACC_02", bus, values))
+  commands.append(packer.make_can_msg("ACC_18", bus, values))
 
   if travel_assist_available:
     # satisfy car to prevent errors when pressing Travel Assist Button
@@ -157,7 +157,7 @@ def create_acc_accel_control(packer, bus, acc_type, acc_enabled, upper_jerk, low
        "Travel_Assist_Available": 1,
     }
 
-    commands.append(packer.make_can_msg("MEB_Travel_Assist_01", bus, values_ta))
+    commands.append(packer.make_can_msg("TA_01", bus, values_ta))
 
   return commands
 
