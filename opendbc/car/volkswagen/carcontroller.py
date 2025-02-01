@@ -257,6 +257,7 @@ class CarController(CarControllerBase):
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if self.CP.flags & VolkswagenFlags.MEB:
+        fcw_alert = True if hud_control.visualAlert == VisualAlert.fcw else False
         show_distance_bars = self.frame - self.distance_bar_frame < 400
         gap = max(8, CS.out.vEgo * hud_control.leadFollowTime)
         distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
@@ -264,7 +265,7 @@ class CarController(CarControllerBase):
                                                        CS.esp_hold_confirmation, CC.cruiseControl.override or CS.out.gasPressed)
         can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
                                                          hud_control.leadVisible, hud_control.leadDistanceBars + 1, show_distance_bars,
-                                                         CS.esp_hold_confirmation, distance, gap, show_distance_bars))
+                                                         CS.esp_hold_confirmation, distance, gap, fcw_alert, show_distance_bars))
 
       else:
         lead_distance = 0
