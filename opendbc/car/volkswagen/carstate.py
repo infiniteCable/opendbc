@@ -368,7 +368,7 @@ class CarState(CarStateBase):
     ret.batteryDetails.charge = pt_cp.vl["Motor_16"]["MO_Energieinhalt_BMS"] # battery charge WattHours
     ret.batteryDetails.voltage = 355 # nominal voltage cupra born
     if self.CP.networkLocation == NetworkLocation.gateway:
-      #ret.batteryDetails.heaterActive = main_cp.vl["MEB_HVEM_01"]["PTC_Status"] == 1 # battery heater active
+      ret.batteryDetails.heaterActive = bool(main_cp.vl["MEB_HVEM_03"]["PTC_on"]) # battery heater active
       ret.batteryDetails.capacity = main_cp.vl["BMS_04"]["BMS_Kapazitaet_02"] * ret.batteryDetails.voltage # EV battery capacity WattHours
       ret.batteryDetails.soc = ret.batteryDetails.charge / ret.batteryDetails.capacity * 100 if ret.batteryDetails.capacity > 0 else 0 # battery SoC in percent
       ret.batteryDetails.power = main_cp.vl["MEB_HVEM_01"]["Engine_Power"] # engine power output
@@ -586,6 +586,7 @@ class MebExtraSignals:
   ]
   main_messages = [
     ("MEB_HVEM_01", 100),
+    ("MEB_HVEM_03", 2),
     ("BMS_04", 2),
     ("DCDC_03", 2),
   ]
