@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase):
       ret.transmissionType = TransmissionType.direct
       ret.steerControlType = structs.CarParams.SteerControlType.curvatureDEPRECATED
 
-      if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, MEB_EPS_01
+      if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, QFK_01
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
       if ret.networkLocation == NetworkLocation.gateway:
         ret.radarUnavailable = False
 
-      if 0x26B in fingerprint[2]:  # MEB_Travel_Assist_01
+      if 0x26B in fingerprint[2]:  # TA_01
         ret.flags |= VolkswagenFlags.TRAVEL_ASSIST_PRESENT.value
 
     else:
