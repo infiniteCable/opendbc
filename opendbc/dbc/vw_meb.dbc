@@ -157,10 +157,10 @@ BO_ 190 MEB_HVEM_01: 48 XXX
  SG_ Unknown_01 : 100|9@1+ (1,0) [0|7] "" XXX
  SG_ Power_02 : 113|10@1+ (1,0) [0|127] "" XXX
 
-BO_ 192 MEB_ESP_02: 32 XXX
+BO_ 192 EM1_01: 32 XXX
  SG_ Schubbetrieb : 79|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 219 MEB_AEB_01: 48 XXX
+BO_ 219 AWV_03: 48 XXX
  SG_ CHK : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ FCW_Active : 64|1@0+ (1,0) [0|1] "" XXX
@@ -172,7 +172,7 @@ BO_ 247 MEB_HVEM_02: 8 XXX
  SG_ NEW_SIGNAL_3 : 44|10@1+ (1,0) [0|7] "" XXX
  SG_ NEW_SIGNAL_2 : 54|7@1+ (1,0) [0|3] "" XXX
 
-BO_ 252 MEB_ESP_01: 48 XXX
+BO_ 252 ESC_51: 48 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ AEB_Breaking_01 : 24|8@1+ (1,0) [0|255] "" XXX
@@ -214,7 +214,7 @@ BO_ 253 ESP_21: 8 Gateway
  SG_ ESP_ASP : 62|1@1+ (1,0) [0|1] "" ZR_High
  SG_ ESC_Neutralschaltung : 63|1@1+ (1,0) [0|1] "" Vector__XXX
 
-BO_ 258 MEB_ESP_04: 48 XXX
+BO_ 258 ESC_50: 48 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Lateral_Accel : 16|8@1+ (0.15,-18.9) [0|255] "Unit_MeterPerSquareSecond" XXX
@@ -225,7 +225,7 @@ BO_ 258 MEB_ESP_04: 48 XXX
  SG_ Standstill : 171|1@0+ (1,0) [0|1] "" XXX
  SG_ Longitudinal_Speed : 181|10@1+ (0.25,0) [0|255] "Unit_KilometerPerHour" XXX
 
-BO_ 261 MEB_ABS_02: 8 XXX
+BO_ 261 VMM_01: 8 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ NEW_SIGNAL_5 : 13|1@0+ (1,0) [0|1] "" XXX
@@ -234,7 +234,7 @@ BO_ 261 MEB_ABS_02: 8 XXX
  SG_ NEW_SIGNAL_1 : 40|2@1+ (1,0) [0|3] "" XXX
  SG_ Brake : 53|7@1+ (1,0) [0|3] "" XXX
 
-BO_ 267 MEB_Motor_01: 32 XXX
+BO_ 267 Motor_51: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Accel_Pedal_Pressure : 12|9@1+ (0.4,0) [0|255] "" XXX
@@ -308,7 +308,9 @@ BO_ 299 GRA_ACC_01: 8 Gateway
  SG_ GRA_reserveByte7 : 48|8@1+ (1,0) [0|255] "" Vector__XXX
  SG_ GRA_reserveByte8 : 56|8@1+ (1,0) [0|255] "" Vector__XXX
 
-BO_ 313 MEB_ESP_05: 32 XXX
+BO_ 312 IPA_01: 32 XXX
+
+BO_ 313 VMM_02: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_Pressed_1 : 16|1@0+ (1,0) [0|1] "" XXX
@@ -319,7 +321,7 @@ BO_ 313 MEB_ESP_05: 32 XXX
  SG_ FCW_Active : 56|1@1+ (1,0) [0|1] "" XXX
  SG_ Brake_Pressure : 76|11@1+ (1,0) [0|100] "" XXX
 
-BO_ 317 MEB_EPS_01: 32 XXX
+BO_ 317 QFK_01: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ LatCon_HCA_Accept : 17|2@1+ (1,0) [0|3] "" XXX
@@ -329,12 +331,36 @@ BO_ 317 MEB_EPS_01: 32 XXX
  SG_ Steering_Angle_VZ : 55|1@0+ (1,0) [0|1] "" XXX
  SG_ Steering_Angle : 76|17@1+ (0.00906,0) [0|32767] "" XXX
 
-BO_ 332 MEB_ESP_03: 32 XXX
+BO_ 319 PreCrash_02: 8 Gateway
+ SG_ PreCrash_02_CRC : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ PreCrash_02_BZ : 8|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ PreCrash_Charisma_FahrPr : 12|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ PreCrash_Charisma_Status : 16|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ PreCrash_Schiebedach_schliessen : 18|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_Fenster_schliessen : 19|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_Blinken : 20|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ SC_PreSense_FCWP : 23|1@1+ (1,0) [0|1] "" NightVision
+ SG_ PreCrash_Tueren_Verriegeln : 24|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_Anforderung_AFR : 26|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ SC_PreCrash_LED : 29|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ PreCrash_FS_Pneumatik_ansteuern : 31|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_BFS_Pneumatik_ansteuern : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_Fo_Pneumatik_ansteuern : 33|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PreCrash_FS_Sitzlehne_verfahren : 34|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ PreCrash_BFS_Sitzlehne_verfahren : 37|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ PreCrash_Fo_Sitzlehne_verfahren : 40|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ PreCrash_FS_KSV_verfahren : 43|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ PreCrash_BFS_KSV_verfahren : 47|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ PreCrash_Fo_KSV_verfahren : 51|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ SC_PreCrash_Warnung : 56|4@1+ (1,0) [0|15] "" NightVision
+ SG_ SC_PreCrash_Texte : 60|4@1+ (1,0) [0|15] "" Vector__XXX
+
+BO_ 332 Motor_54: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Accelerator_Pressure : 175|8@0+ (0.391,-14.467) [0|100] "Unit_Percent" XXX
 
-BO_ 333 MEB_ACC_02: 32 XXX
+BO_ 333 ACC_18: 32 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ ACC_limitierte_Anfahrdyn : 12|1@1+ (1,0) [0|1] "" XXX
@@ -432,17 +458,17 @@ BO_ 496 EA_02: 8 Gateway
  SG_ EA_Bremslichtblinken : 31|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ EA_Blinken : 32|3@1+ (1,0) [0|7] "" Vector__XXX
 
-BO_ 517 MEB_Light_01: 8 XXX
+BO_ 517 SAM_01: 8 XXX
  SG_ Brake_Light : 36|1@0+ (1,0) [0|1] "" XXX
  SG_ Left_Blinker : 37|1@0+ (1,0) [0|1] "" XXX
  SG_ Right_Blinker : 38|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 518 MEB_AEB_02: 24 XXX
+BO_ 518 Parken_01: 24 XXX
  SG_ CHK : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ AEB_Active : 16|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 522 MEB_ABS_01: 64 XXX
+BO_ 522 EML_06: 64 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Yaw_Rate_VZ : 33|1@1+ (1,0) [0|1] "" XXX
@@ -523,7 +549,7 @@ BO_ 605 KLR_01: 8 Gateway
  SG_ KLR_Touchintensitaet_3 : 32|8@1+ (1,0) [0|250] "Unit_None" Vector__XXX
  SG_ KLR_Touchauswertung : 40|4@1+ (1,0) [0|15] "" ZR_High
 
-BO_ 619 MEB_Travel_Assist_01: 8 XXX
+BO_ 619 TA_01: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Travel_Assist_Status : 13|3@1+ (1,0) [0|3] "" XXX
@@ -762,7 +788,7 @@ BO_ 891 GNSS_05: 8 Gateway
  SG_ GNSS_Genutzte_Satelliten : 45|5@1+ (1,0) [1|30] "Unit_None" ZR_High,ZR_LIMU,ZR_MIB_TOP_ab_Gen3,ZR_Standard
  SG_ GNSS_Nachrichtenpaket_ID5 : 50|2@1+ (1,0) [0|3] "Unit_Bit" ZR_High,ZR_LIMU,ZR_MIB_TOP_ab_Gen3,ZR_Standard
 
-BO_ 896 MEB_PDC_01: 8 XXX
+BO_ 896 APS_Master: 8 XXX
  SG_ Active : 54|1@0+ (1,0) [0|1] "" XXX
  SG_ Distance : 55|9@1+ (1,0) [0|255] "" XXX
 
@@ -1232,7 +1258,7 @@ BO_ 987 Gateway_72: 8 Gateway_MQB
  SG_ BCM1_OBD_FStatus_ATemp : 52|4@1+ (1,0) [0|15] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
  SG_ BCM1_Aussen_Temp_ungef : 56|8@1+ (0.5,-50) [-50|76] "Unit_DegreCelsi" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
 
-BO_ 988 MEB_EPB_01: 8 XXX
+BO_ 988 Gateway_73: 8 XXX
  SG_ EPB_Status : 53|3@1+ (1,0) [0|7] "" XXX
 
 BO_ 997 TSG_FT_02: 8 Gateway
@@ -1255,6 +1281,8 @@ BO_ 997 TSG_FT_02: 8 Gateway
 
 BO_ 1004 MEB_TSK_01: 8 XXX
  SG_ TSK_State : 53|3@1+ (1,0) [0|7] "" XXX
+
+BO_ 1031 PLA_04: 8 XXX
 
 BO_ 1122 PSD_04: 8 ZR_High
  SG_ PSD_Segment_ID : 0|6@1+ (1,0) [2|63] "" Gateway,Gateway_PAG
@@ -1391,6 +1419,10 @@ BO_ 1155 Motor_Hybrid_06: 8 Gateway
  SG_ MO_Powermeter_Grenze_strategisch : 28|12@1+ (1,0) [0|4093] "Unit_None" Vector__XXX
  SG_ MO_Powermeter_untere_E_Grenze : 40|12@1+ (1,0) [0|4093] "Unit_None" Vector__XXX
  SG_ MO_Powermeter_obere_E_Grenze : 52|12@1+ (1,0) [0|4093] "Unit_None" Vector__XXX
+
+BO_ 1163 BEM_06: 8 XXX
+ SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHK : 8|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 1175 Parkhilfe_01: 8 Gateway
  SG_ PH_Visualisierung : 0|3@1+ (1,0) [0|7] "" AWC
@@ -1620,6 +1652,8 @@ BO_ 1420 Klemmen_Steuerung_01: 8 Gateway
  SG_ KST_Anf_ZV_Verriegelung : 24|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ Relais_VoKo_angesteuert : 25|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ RSt_Anforderung_HMS : 26|3@1+ (1,0) [0|7] "" Vector__XXX
+
+BO_ 1426 Kessy_04: 8 XXX
 
 BO_ 1440 RLS_01: 8 Gateway
  SG_ LS_Helligkeit_IR : 0|8@1+ (400,0) [0|101200] "Unit_Lux" ZR_High
@@ -2013,6 +2047,24 @@ BO_ 1716 VIN_01: 8 Gateway_MQB
  SG_ VIN_16 m2 : 48|8@1+ (1,0) [0|255] "" Airbag_MQB
  SG_ VIN_17 m2 : 56|8@1+ (1,0) [0|255] "" Airbag_MQB
 
+BO_ 316495049 SAL_01: 8 XXX
+ SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 316495106 AAA_01: 8 XXX
+ SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHK : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 316495165 HVL_01: 8 XXX
+ SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHK : 8|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 380195935 IPA_02: 8 XXX
+
+BO_ 441800001 EML_02: 8 XXX
+ SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHK : 8|4@1+ (1,0) [0|15] "" XXX
+
 VAL_ 64 AB_RGS_Anst 4 "aktiv_Niveau_1" 5 "aktiv_Niveau_2" 6 "aktiv_Niveau_3" 7 "aktiv_Niveau_4" 8 "deaktiviert";
 VAL_ 64 AB_Front_Crash 0 "kein_Front_Crash" 1 "Front_Crash";
 VAL_ 64 AB_Heck_Crash 0 "kein_Heck_Crash" 1 "Heck_Crash";
@@ -2132,6 +2184,26 @@ VAL_ 299 GRA_LIM_Taste_verfuegbar 0 "Limiter_Taste_nicht_vorhanden" 1 "Limiter_T
 VAL_ 299 GRA_Tip_Stufe_2 0 "Tip_Stufe_1__keine_Betaetigung" 1 "Tip_Stufe_2";
 VAL_ 299 GRA_TravelAssist 0 "nicht_betaetigt" 1 "betaetigt";
 VAL_ 317 LatCon_HCA_Status 0 "disabled" 1 "initializing" 2 "ready" 3 "fault" 4 "active" 5 "preempted" 6 "fault" 7 "rejected";
+VAL_ 319 PreCrash_Charisma_FahrPr 0 "keine_Funktion" 1 "Programm_1" 2 "Programm_2" 3 "Programm_3" 4 "Programm_4" 5 "Programm_5" 6 "Programm_6" 7 "Programm_7" 8 "Programm_8" 9 "Programm_9" 10 "Programm_10" 11 "Programm_11" 12 "Programm_12" 13 "Programm_13" 14 "Programm_14" 15 "Programm_15";
+VAL_ 319 PreCrash_Charisma_Status 0 "Init" 1 "verfuegbar" 2 "nicht_verfuegbar" 3 "asynchron_durch_Fahrerwunsch";
+VAL_ 319 PreCrash_Schiebedach_schliessen 0 "keine_Schliessung" 1 "Schliessung_angefordert";
+VAL_ 319 PreCrash_Fenster_schliessen 0 "keine_Schliessung" 1 "Schliessung_angefordert";
+VAL_ 319 PreCrash_Blinken 0 "keine_Blinkanforderung" 1 "Warnblinken" 2 "RECAS_Blinken" 3 "Notbremsblinken";
+VAL_ 319 SC_PreSense_FCWP 0 "Warnung_gilt_fuer_Objekte" 1 "Warnung_gitl_fuer_Fussgaenger";
+VAL_ 319 PreCrash_Tueren_Verriegeln 0 "keine_Anforderung" 1 "Tueren_Verriegeln";
+VAL_ 319 PreCrash_Anforderung_AFR 0 "keine_Anforderung" 1 "linke_Seite" 2 "rechte_Seite" 3 "Vorderachse" 4 "Hinterachse" 5 "Vorwarnung" 7 "Init";
+VAL_ 319 SC_PreCrash_LED 0 "keine_Anzeige" 1 "Stufe_1_glimmen" 2 "Stufe_2_leuchten" 3 "Stufe_3_blinken";
+VAL_ 319 PreCrash_FS_Pneumatik_ansteuern 0 "keine_Anforderung" 1 "Pneumatik_ansteuern";
+VAL_ 319 PreCrash_BFS_Pneumatik_ansteuern 0 "keine_Anforderung" 1 "Pneumatik_ansteuern";
+VAL_ 319 PreCrash_Fo_Pneumatik_ansteuern 0 "keine_Anforderung" 1 "Pneumatik_ansteuern";
+VAL_ 319 PreCrash_FS_Sitzlehne_verfahren 0 "keine_Anforderung" 1 "Sitzlehne_in_pos_x-Richtung_verfahren(vor)" 2 "Sitzlehne_in_neg_x-Richtung_verfahren(zurueck)" 3 "Sitzlehnenkopf_in_pos_x-Richtung_verfahren(vor)" 4 "Sitzlehnenkopf_in_neg_x-Richtung_verfahren(zurueck)" 6 "Lehnenverstellung_ansteuern" 7 "Lehnenkopfverstellung_ansteuern";
+VAL_ 319 PreCrash_BFS_Sitzlehne_verfahren 0 "keine_Anforderung" 1 "Sitzlehne_in_pos_x-Richtung_verfahren(vor)" 2 "Sitzlehne_in_neg_x-Richtung_verfahren(zurueck)" 3 "Sitzlehnenkopf_in_pos_x-Richtung_verfahren(vor)" 4 "Sitzlehnenkopf_in_neg_x-Richtung_verfahren(zurueck)" 6 "Lehnenverstellung_ansteuern" 7 "Lehnenkopfverstellung_ansteuern";
+VAL_ 319 PreCrash_Fo_Sitzlehne_verfahren 0 "keine_Anforderung" 1 "Sitzlehne_in_pos_x-Richtung_verfahren(vor)" 2 "Sitzlehne_in_neg_x-Richtung_verfahren(zurueck)" 3 "Sitzlehnenkopf_in_pos_x-Richtung_verfahren(vor)" 4 "Sitzlehnenkopf_in_neg_x-Richtung_verfahren(zurueck)";
+VAL_ 319 PreCrash_FS_KSV_verfahren 0 "keine_Anforderung" 1 "in_pos_x-Richtung_verfahren" 2 "in_neg_x-Richung_verfahren" 3 "in_pos_z-Richtung_verfahren" 4 "in_neg_z-Richtung_verfahren" 5 "in_pos_x-Richtung_und_neg_z-Richtung_verfahren" 6 "in_pos_x_Richtung_und_pos_z-Richtung_verfahren" 7 "in_neg_x-Richtung_und_neg_z-Richtung_verfahren" 8 "in_neg_x-Richtung_und_pos_z-Richtung_verfahren" 9 "Kopfstuetze_ansteuern";
+VAL_ 319 PreCrash_BFS_KSV_verfahren 0 "keine_Anforderung" 1 "in_pos_x-Richtung_verfahren" 2 "in_neg_x-Richung_verfahren" 3 "in_pos_z-Richtung_verfahren" 4 "in_neg_z-Richtung_verfahren" 5 "in_pos_x-Richtung_und_neg_z-Richtung_verfahren" 6 "in_pos_x_Richtung_und_pos_z-Richtung_verfahren" 7 "in_neg_x-Richtung_und_neg_z-Richtung_verfahren" 8 "in_neg_x-Richtung_und_pos_z-Richtung_verfahren" 9 "Kopfstuetze_ansteuern";
+VAL_ 319 PreCrash_Fo_KSV_verfahren 0 "keine_Anforderung" 1 "in_pos_x-Richtung_verfahren" 2 "in_neg_x-Richung_verfahren" 3 "in_pos_z-Richtung_verfahren" 4 "in_neg_z-Richtung_verfahren" 5 "in_pos_x-Richtung_und_neg_z-Richtung_verfahren" 6 "in_pos_x_Richtung_und_pos_z-Richtung_verfahren" 7 "in_neg_x-Richtung_und_neg_z-Richtung_verfahren" 8 "in_neg_x-Richtung_und_pos_z-Richtung_verfahren";
+VAL_ 319 SC_PreCrash_Warnung 0 "keine_Anzeige" 1 "latente_Vorwarnung" 2 "Vorwarnung" 3 "Akutwarnung" 4 "Eingriff" 5 "Fahreruebernahmeaufforderung" 6 "Abbiegewarnung" 7 "Basiseingriff" 8 "Heckeingriff";
+VAL_ 319 SC_PreCrash_Texte 0 "keine_Anzeige" 1 "Systemstoerung" 2 "keine_Sensorsicht" 3 "Demomodus" 4 "System_aus" 5 "Anhaengerbetrieb" 6 "ESC_aus" 7 "zurzeit_eingeschraenkt" 8 "zurzeit_eingeschraenkt_ESP_Aus" 9 "Initialisierung";
 VAL_ 333 ACC_limitierte_Anfahrdyn 0 "keine_Limitierung" 1 "Limitierung_Anfahrdynamik_angefordert";
 VAL_ 333 ACC_nachtr_Stopp_Anf 0 "nicht_angefordert" 1 "angefordert";
 VAL_ 333 ACC_StartStopp_Info 0 "Motorlauf_langfristig_nicht_notwendig_Stoppfreigabe" 1 "Motoranlauf_nicht_zwingend_notwendig_Stoppverbot_keine_Startanforderung" 2 "Motoranlauf_zwingend_notwendig_Startanforderung" 3 "Systemfehler";
