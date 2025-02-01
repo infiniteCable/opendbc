@@ -1468,6 +1468,9 @@ BO_ 1355 Parkhilfe_04: 8 Gateway
  SG_ PDC_Charisma_Status : 58|2@1+ (1,0) [0|3] "" Vector__XXX
  SG_ PDC_Charisma_FahrPr : 60|4@1+ (1,0) [0|15] "" Vector__XXX
 
+BO_ 896 MEB_PDC_01: 8 XXX
+ SG_ Distance : 54|10@1+ (1,0) [0|255] "" XXX
+
 BO_ 252 MEB_ESP_01: 48 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
