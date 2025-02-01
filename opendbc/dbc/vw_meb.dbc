@@ -1557,7 +1557,7 @@ BO_ 1385 MEB_HVEM_03: 8 XXX
  SG_ NEW_SIGNAL_1 : 1|2@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_10 : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_2 : 4|2@1+ (1,0) [0|3] "" XXX
- SG_ PTC_on: 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ PTC_ON : 7|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_3 : 25|2@1+ (1,0) [0|3] "" XXX
  SG_ NEW_SIGNAL_13 : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_4 : 33|2@1+ (1,0) [0|3] "" XXX
