@@ -1627,6 +1627,11 @@ BO_ 219 MEB_AEB_01: 48 XXX
  SG_ FCW_Active : 64|1@0+ (1,0) [0|1] "" XXX
  SG_ Pre_Brake_Fill : 76|1@0+ (1,0) [0|1] "" XXX
 
+BO_ 518 MEB_AEB_02: 24 XXX
+ SG_ CHK : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ AEB_Active : 16|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 768 MEB_ACC_01: 48 XXX
  SG_ ACC_Tempolimit : 64|5@1+ (1,0) [0|31] "" OTA_FC
  SG_ ACC_Wunschgeschw_Farbe : 69|1@1+ (1,0) [0|1] "" Vector__XXX
