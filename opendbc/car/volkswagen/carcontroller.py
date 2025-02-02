@@ -111,8 +111,8 @@ class CarController(CarControllerBase):
           apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
           apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           apply_curvature = np.clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
-          if CS.out.steeringPressed: # roughly sync with user input
-            apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
+          # panda safety compares against true curvature (rate checks): enforce max error here to prevent too much drifting apart resulting in massive tx blocks
+          apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
 
           steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
