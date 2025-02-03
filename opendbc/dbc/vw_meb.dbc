@@ -149,13 +149,21 @@ BO_ 184 EM1_HYB_13: 8 Gateway
 BO_ 190 MEB_HVEM_01: 48 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ Engine_RPM_Max : 12|13@1- (2,6732) [0|15] "RPM" XXX
- SG_ Engine_RPM_Min : 26|13@1- (2,6084) [0|63] "RPM" XXX
- SG_ Engine_Power : 56|11@1- (0.25,0.5) [0|255] "kW" XXX
+ SG_ Engine_RPM_Max : 12|14@1+ (2,-9658) [0|15] "RPM" XXX
+ SG_ Engine_RPM_Min : 26|14@1+ (2,-10300) [0|63] "RPM" XXX
+ SG_ In_Motion_04 : 48|3@1+ (1,0) [0|7] "" XXX
+ SG_ In_Motion_03 : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ In_Motion_02 : 54|1@0+ (1,0) [0|1] "" XXX
+ SG_ Engine_Power : 56|12@1+ (0.3,-613.8) [0|255] "kW" XXX
+ SG_ In_Motion : 68|1@1+ (1,0) [0|3] "" XXX
+ SG_ Standstill : 71|1@0+ (1,0) [0|1] "" XXX
  SG_ Unknown_04 : 72|10@1+ (1,0) [0|255] "" XXX
- SG_ Power_01 : 86|10@1+ (1,0) [0|3] "" XXX
+ SG_ Battery_Voltage : 86|11@1+ (0.25,0) [0|3] "Volt" XXX
  SG_ Unknown_01 : 100|9@1+ (1,0) [0|7] "" XXX
- SG_ Power_02 : 113|10@1+ (1,0) [0|127] "" XXX
+ SG_ Battery_Voltage_02 : 113|11@1+ (0.3,0) [0|127] "Volt" XXX
+ SG_ Engine_Status : 296|2@1+ (1,0) [0|3] "" XXX
+ SG_ Inactive : 300|1@0+ (1,0) [0|1] "" XXX
+ SG_ Inactive_02 : 303|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 192 EM1_01: 32 XXX
  SG_ Schubbetrieb : 79|1@0+ (1,0) [0|1] "" XXX
@@ -2138,6 +2146,7 @@ VAL_ 184 EM1_Moment_HVVerbraucher 1023 "Init";
 VAL_ 184 EM1_Freigabe_Verfallsinfo_WFS 0 "Aus" 1 "Ein";
 VAL_ 184 EM1_Parken_WFS_Status 0 "Limitierung_Inaktiv" 1 "Limitierung_Aktiv" 2 "Abbruch";
 VAL_ 184 EM1_HV_betriebsbereit 0 "Init" 1 "Ready_HV";
+VAL_ 190 Engine_Status 1 "Ready" 2 "Online";
 VAL_ 253 BR_Eingriffsmoment 1022 "Init" 1023 "Fehler";
 VAL_ 253 ESP_Diagnose 0 "ESP_nicht_in_Diagnose" 1 "ESP_in_Diagnose";
 VAL_ 253 ESC_v_Signal_Qualifier_High_Low 0 "Gueteschwelle_kleiner_1kmh" 1 "Gueteschwelle_kleiner_3kmh" 2 "Gueteschwelle_kleiner_5kmh" 3 "Gueteschwelle_kleiner_10kmh" 4 "Gueteschwelle_kleiner_20kmh" 5 "Gueteschwelle_groessergleich_20kmh" 6 "Init" 7 "Fehler";
