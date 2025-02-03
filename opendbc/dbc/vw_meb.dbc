@@ -2410,6 +2410,8 @@ VAL_ 916 GE_Stoppverbot_Anz_05 0 "keine_Anzeige" 1 "Eingeschraenkte_Fahrfunktion
 VAL_ 916 GE_Stoppverbot_Anz_06 0 "keine_Anzeige" 1 "Stoppverbot_ueber_Applikation";
 VAL_ 916 GE_Stoppverbot_Anz_07 0 "keine_Anzeige" 1 "Schaltung_aktiv";
 VAL_ 916 GE_Stoppverbot_Anz_Std 0 "keine_Anzeige" 1 "Standard_Stoppvetogrund";
+VAL_ 919 LDW_Gong 1 "Chime" 2 "Beep" 0 "None";
+VAL_ 919 LDW_Texte 8 "laneAssistTakeOver" 4 "laneAssistTakeOverUrgent" 0 "none";
 VAL_ 949 KL_Drehz_Anh 0 "keine_Anhebung" 1 "Drehzahlanhebung_vom_Motor_angefordert";
 VAL_ 949 KL_Vorwarn_Komp_ein 0 "Init" 1 "Vorwarnung_Kompressor_ein";
 VAL_ 949 KL_AC_Schalter 0 "aus" 1 "ein";
