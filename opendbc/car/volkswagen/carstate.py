@@ -525,7 +525,6 @@ class CarState(CarStateBase):
       ("Gateway_73", 20),
       ("SAM_01", 5),
       ("Motor_51", 50),
-      ("AWV_03", 1),             # Front Collision Detection (1 Hz when inactive, 50 Hz when active)
     ]
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
@@ -587,6 +586,7 @@ class MebExtraSignals:
   fwd_radar_messages = [
     ("MEB_ACC_01", 17),
     ("ACC_18", 50),
+    ("AWV_03", 1),             # Front Collision Detection (1 Hz when inactive, 50 Hz when active)
     #("MEB_Distance_01", 25),
   ]
   bsm_radar_messages = [
