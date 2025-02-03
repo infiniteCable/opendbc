@@ -2075,6 +2075,15 @@ BO_ 441800001 EML_02: 8 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CHK : 8|4@1+ (1,0) [0|15] "" XXX
 
+CM_ BO_ 184 "Motorsteuergerät";
+CM_ BO_ 192 "Motorsteuergerät";
+CM_ BO_ 317 "Lenkungssteuergerät";
+CM_ BO_ 517 "Steuergerät für Motorstart";
+CM_ BO_ 522 "Steuergerät für Fahrzeugbewegung";
+CM_ BO_ 1622 "Steuergerät für Lenkungsverriegelung";
+CM_ BO_ 316495165 "Steuergerät ICAS1";
+CM_ BO_ 441800001 "Steuergerät für Fahrzeugbewegung";
+
 VAL_ 64 AB_RGS_Anst 4 "aktiv_Niveau_1" 5 "aktiv_Niveau_2" 6 "aktiv_Niveau_3" 7 "aktiv_Niveau_4" 8 "deaktiviert";
 VAL_ 64 AB_Front_Crash 0 "kein_Front_Crash" 1 "Front_Crash";
 VAL_ 64 AB_Heck_Crash 0 "kein_Heck_Crash" 1 "Heck_Crash";
