@@ -154,7 +154,7 @@ BO_ 190 MEB_HVEM_01: 48 XXX
  SG_ In_Motion_04 : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ In_Motion_03 : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ In_Motion_02 : 54|1@0+ (1,0) [0|1] "" XXX
- SG_ Engine_Power : 56|12@1+ (0.3,-613.8) [0|255] "kW" XXX
+ SG_ Engine_Power : 56|12@1+ (0.5,-1023) [0|255] "kW" XXX
  SG_ In_Motion : 68|1@1+ (1,0) [0|3] "" XXX
  SG_ Standstill : 71|1@0+ (1,0) [0|1] "" XXX
  SG_ Unknown_04 : 72|10@1+ (1,0) [0|255] "" XXX
