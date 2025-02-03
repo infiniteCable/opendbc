@@ -100,16 +100,15 @@ class CarControllerParams:
         Button(structs.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [3]),
       ]
 
-      self.LDW_MESSAGES = { # verify TODO
-        "none": 0,                            # Nothing to display
-        "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
-        "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
-        "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
-        "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
-        "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
-        "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
-        "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
-        "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
+      self.LDW_MESSAGES = {
+        "none": 0,                        # Nothing to display
+        "laneAssistTakeOverUrgent": 4,    # "Lane Assist: Please Take Over Steering" (red)
+        "laneAssistTakeOver": 8,          # "Lane Assist: Please Take Over Steering" (white)
+      }
+      self.LDW_SOUNDS = {
+        "None": 0,                        # No sound
+        "Chime": 1,                       # Play a chime
+        "Beep": 2,                        # Play a loud beep
       }
 
     else:
