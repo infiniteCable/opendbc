@@ -2061,6 +2061,17 @@ BO_ 1716 VIN_01: 8 Gateway_MQB
 BO_ 316495049 SAL_01: 8 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ CNT : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Brake_Unknown : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ Brake_Light_01 : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_2 : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ Right_Blinker : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ Left_Blinker : 26|1@1+ (1,0) [0|3] "" XXX
+ SG_ Reverse_Light : 27|1@0+ (1,0) [0|1] "" XXX
+ SG_ Brake_Light_02 : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ Right_Blinker_02 : 44|1@1+ (1,0) [0|3] "" XXX
+ SG_ Left_Blinker_02 : 45|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_3 : 52|8@1+ (1,0) [0|15] "" XXX
+ SG_ NEW_SIGNAL_4 : 63|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 316495106 AAA_01: 8 XXX
  SG_ CRC : 0|8@1+ (1,0) [0|255] "" XXX
