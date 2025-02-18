@@ -46,9 +46,8 @@ class CarInterface(CarInterfaceBase):
 
       if ret.networkLocation == NetworkLocation.gateway:
         ret.radarUnavailable = False
-
-      if 0x26B in fingerprint[2]:  # TA_01
-        ret.flags |= VolkswagenFlags.TRAVEL_ASSIST_PRESENT.value
+        if 0x26B in fingerprint[2]:  # TA_01
+          ret.flags |= VolkswagenFlags.TRAVEL_ASSIST_PRESENT.value
 
     else:
       # Set global MQB parameters
