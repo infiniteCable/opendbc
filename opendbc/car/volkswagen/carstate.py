@@ -553,7 +553,7 @@ class CarState(CarStateBase):
     if CP.networkLocation == NetworkLocation.fwdCamera:
       cam_messages += [
         # sig_address, frequency
-        ("LDW_02", 10)      # From R242 Driver assistance camera
+        ("LDW_02", 10),     # From R242 Driver assistance camera
         ("TA_01", 10),      # From R242 Driver assistance camera (Travel Assist)
       ]
     else:
