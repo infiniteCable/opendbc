@@ -47,7 +47,8 @@ class CarInterface(CarInterfaceBase):
       if ret.networkLocation == NetworkLocation.gateway:
         ret.radarUnavailable = False
 
-      ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value # for MEB HCA_03 should be always present
+      # TODO for anti EA intervention
+      #ret.flags |= VolkswagenFlags.STOCK_HCA_PRESENT.value # for MEB HCA_03 should be always present
 
     else:
       # Set global MQB parameters
