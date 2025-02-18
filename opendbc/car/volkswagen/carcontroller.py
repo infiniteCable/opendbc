@@ -113,7 +113,7 @@ class CarController(CarControllerBase):
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
           apply_curvature = np.clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
-          apply_steer = 5000 * apply_curvature * (1 + CS.out.vEgoRaw / 100) # this is a rough approximation for anti EA intervention
+          apply_steer = 5000 * -apply_curvature * (1 + CS.out.vEgoRaw / 100) # this is a rough approximation for anti EA intervention
 
           steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
