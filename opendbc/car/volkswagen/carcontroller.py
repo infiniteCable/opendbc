@@ -109,10 +109,11 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           apply_curvature = self.smooth_curv.update(actuators.curvature) # reduce wear, better comfort and car stability without reducing steering ability
+          apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-          apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           apply_curvature = np.clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
+          apply_steer = 5000 * apply_curvature * (1 + CS.out.vEgoRaw / 100) # this is a rough approximation for anti EA intervention
 
           steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
@@ -137,6 +138,7 @@ class CarController(CarControllerBase):
           steering_power_boost = True if steering_power == self.CCP.STEERING_POWER_MAX else False
           
         else:
+          apply_steer = 0
           steering_power_boost = False
           if self.steering_power_last > 0: # keep HCA alive until steering power has reduced to zero
             hca_enabled = True
