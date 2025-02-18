@@ -549,14 +549,13 @@ class CarState(CarStateBase):
     if CP.networkLocation == NetworkLocation.gateway:
       main_messages += MebExtraSignals.main_messages
 
-    cam_messages = []
-    if CP.networkLocation == NetworkLocation.fwdCamera:
-      cam_messages += [
-        # sig_address, frequency
-        ("LDW_02", 10),     # From R242 Driver assistance camera
-        ("TA_01", 10),      # From R242 Driver assistance camera (Travel Assist)
-      ]
-    else:
+    cam_messages = [
+      # sig_address, frequency
+      ("LDW_02", 10),     # From R242 Driver assistance camera
+      ("TA_01", 10),      # From R242 Driver assistance camera (Travel Assist)
+    ]
+    
+    if CP.networkLocation == NetworkLocation.gateway:
       # Radars are here on CANBUS.cam
       cam_messages += MebExtraSignals.fwd_radar_messages
       if CP.enableBsm:
