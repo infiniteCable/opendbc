@@ -242,3 +242,12 @@ def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, di
   }
 
   return packer.make_can_msg("MEB_ACC_01", bus, values)
+
+def send_radar_config(packer, bus, mode):
+  values = {
+    "Control_Byte":  0xF8,
+    "Radar_Mode":    0x08 if mode == 1 else ( 0x10 if mode == 2 else 0 ), # 1 obj, 2 clust, 0 def
+    "Checksum":      0x9C,
+  }
+  
+  return packer.make_can_msg("RADAR_Config", bus, values)
