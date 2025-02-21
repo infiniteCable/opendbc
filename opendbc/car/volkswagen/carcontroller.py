@@ -284,12 +284,12 @@ class CarController(CarControllerBase):
 
     # **************************************** #
 
-    if self.frame % 3000 == 0 and self.CP.flags & VolkswagenFlags.MEB:
-      if self.radar_mode >= 3:
-        self.radar_mode = 0
-      else:
-        self.radar_mode += 1
-      can_sends.append(self.CCS.send_radar_config(self.packer_pt, CANBUS.cam, self.radar_mode))
+    if self.frame % 4 == 0 and self.CP.flags & VolkswagenFlags.MEB:
+      #if self.radar_mode >= 3:
+      #  self.radar_mode = 0
+      #else:
+      #  self.radar_mode += 1
+      can_sends.append(self.CCS.send_radar_config(self.packer_pt, CANBUS.cam, 1))
 
     # **** Stock ACC Button Controls **************************************** #
 
