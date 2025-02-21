@@ -2122,14 +2122,14 @@ BO_ 441800082 MEB_Camera_12: 8 XXX
 BO_ 452984911 MEB_Camera_13: 8 XXX
 
 BO_ 512 RADAR_Config: 8 RADAR
- SG_ Unknown_01        : 0|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Reserved_1        : 8|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Reserved_2        : 16|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Reserved_3        : 24|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Radar_Mode        : 32|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Unknown_02        : 40|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Reserved_4        : 48|8@1+ (1,0) [0|255] "" Vector__XXX
- SG_ Reserved_5        : 56|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Unknown_01 : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Reserved_1 : 8|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Reserved_2 : 16|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Reserved_3 : 24|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Radar_Mode : 32|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Unknown_02 : 40|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Reserved_4 : 48|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ Reserved_5 : 56|8@1+ (1,0) [0|255] "" Vector__XXX
 
 CM_ BO_ 184 "Motorsteuergerät";
 CM_ BO_ 192 "Motorsteuergerät";
