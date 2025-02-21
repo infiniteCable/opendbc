@@ -284,7 +284,7 @@ class CarController(CarControllerBase):
 
     # **************************************** #
 
-    if self.frame % 3000 == 0 and self.CP.flags & VolkswagenFlags.MEB:
+    if self.frame % 3000 == 0 and self.CP.flags & VolkswagenFlags.MEB::
       if self.radar_mode >= 3:
         self.radar_mode = 0
       else:
