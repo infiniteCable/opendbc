@@ -91,6 +91,8 @@ class CarController(CarControllerBase):
     self.distance_bar_frame = 0
     self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL) # effectivly adds a small delay, compensate with steering actuator delay)
 
+    self.radar_mode = 0
+
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -279,6 +281,15 @@ class CarController(CarControllerBase):
         set_speed = hud_control.setSpeed * CV.MS_TO_KPH
         can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
                                                          lead_distance, hud_control.leadDistanceBars))
+
+    # **************************************** #
+
+    if self.frame % 3000 == 0:
+      if self.radar_mode >= 3:
+        self.radar_mode = 0
+      else:
+       self.radar_mode += 1
+      can_sends.append(self.CCS.send_radar_config(self.packer_pt, CANBUS.cam, self.radar_mode))
 
     # **** Stock ACC Button Controls **************************************** #
 
