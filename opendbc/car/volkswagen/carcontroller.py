@@ -53,7 +53,8 @@ class CarController(CarControllerBase):
         if CC.latActive:
           hca_enabled = True
           current_curvature = CS.curvature #-CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
-          apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
+          actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
+          apply_curvature = apply_std_steer_angle_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, self.CCP)
           if CS.out.steeringPressed: # roughly sync with user input
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
           apply_curvature = np.clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
