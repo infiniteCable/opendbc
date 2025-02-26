@@ -17,6 +17,8 @@
 #define MSG_LDW_02           0x397   // TX by OP, Lane line recognition and text alerts
 #define MSG_Motor_51         0x10B   // RX for TSK state
 #define MSG_TA_01            0x26B   // TX for Travel Assist status
+#define MSG_EA_01            0x1A4   // TX, for EA mitigation
+#define MSG_EA_02            0x1F0   // TX, for EA mitigation
 
 static uint8_t volkswagen_crc8_lut_8h2f[256]; // Static lookup table for CRC8 poly 0x2F, aka 8H2F/AUTOSAR
 static int volkswagen_steer_power_prev = 0;
@@ -80,7 +82,12 @@ static uint32_t volkswagen_meb_compute_crc(const CANPacket_t *to_push) {
     crc ^= (uint8_t[]){0x1F,0x28,0xC6,0x85,0xE6,0xF8,0xB0,0x19,0x5B,0x64,0x35,0x21,0xE4,0xF7,0x9C,0x24}[counter];
   } else if (addr == MSG_EML_06) {
     crc ^= (uint8_t[]){0x9D,0xE8,0x36,0xA1,0xCA,0x3B,0x1D,0x33,0xE0,0xD5,0xBB,0x5F,0xAE,0x3C,0x31,0x9F}[counter];
-  } else {
+  } else if (addr == MSG_EA_01) {
+    crc ^= (uint8_t[]){0x69,0xBB,0x54,0xE6,0x4E,0x46,0x8D,0x7B,0xEA,0x87,0xE9,0xB3,0x63,0xCE,0xF8,0xBF}[counter];
+  } else if (addr == MSG_EA_02) {
+    crc ^= (uint8_t[]){0x2F,0x3C,0x22,0x60,0x18,0xEB,0x63,0x76,0xC5,0x91,0x0F,0x27,0x34,0x04,0x7F,0x02}[counter];
+  }
+  else {
     // Undefined CAN message, CRC check expected to fail
   }
   crc = volkswagen_crc8_lut_8h2f[crc];
@@ -91,10 +98,12 @@ static uint32_t volkswagen_meb_compute_crc(const CANPacket_t *to_push) {
 static safety_config volkswagen_meb_init(uint16_t param) {
   // Transmit of GRA_ACC_01 is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
   static const CanMsg VOLKSWAGEN_MEB_STOCK_TX_MSGS[] = {{MSG_HCA_03, 0, 24}, {MSG_GRA_ACC_01, 0, 8},
-                                                       {MSG_GRA_ACC_01, 2, 8}, {MSG_LDW_02, 0, 8}, {MSG_LH_EPS_03, 2, 8}};
+                                                       {MSG_EA_01, 0, 8}, {MSG_EA_02, 0, 8},
+                                                       {MSG_GRA_ACC_01, 2, 8}, {MSG_LDW_02, 0, 8}};
   
   static const CanMsg VOLKSWAGEN_MEB_LONG_TX_MSGS[] = {{MSG_MEB_ACC_01, 0, 48}, {MSG_ACC_18, 0, 32}, {MSG_HCA_03, 0, 24},
-                                                       {MSG_LDW_02, 0, 8}, {MSG_LH_EPS_03, 2, 8}, {MSG_TA_01, 0, 8}};
+                                                       {MSG_EA_01, 0, 8}, {MSG_EA_02, 0, 8},
+                                                       {MSG_LDW_02, 0, 8}, {MSG_TA_01, 0, 8}};
 
   static RxCheck volkswagen_meb_rx_checks[] = {
     {.msg = {{MSG_LH_EPS_03, 0, 8, .check_checksum = true, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}},
@@ -313,7 +322,7 @@ static int volkswagen_meb_fwd_hook(int bus_num, int addr) {
       bus_fwd = 2;
       break;
     case 2:
-      if ((addr == MSG_HCA_03) || (addr == MSG_LDW_02)) {
+      if ((addr == MSG_HCA_03) || (addr == MSG_LDW_02 || (addr == MSG_EA_01) || (addr == MSG_EA_02)) {
         // openpilot takes over LKAS steering control and related HUD messages from the camera
         bus_fwd = -1;
       } else if (volkswagen_longitudinal && ((addr == MSG_MEB_ACC_01) || (addr == MSG_ACC_18) || (addr == MSG_TA_01))) {
