@@ -75,6 +75,7 @@ class CarController(CarControllerBase):
       self.CCS = mqbcan
     self.packer_pt = CANPacker(dbc_names[Bus.pt])
     self.ext_bus = CANBUS.pt if CP.networkLocation == structs.CarParams.NetworkLocation.fwdCamera else CANBUS.cam
+    self.aeb_available = not CP.flags & VolkswagenFlags.PQ
 
     self.apply_steer_last = 0
     self.apply_curvature_last = 0
@@ -239,6 +240,12 @@ class CarController(CarControllerBase):
         acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
         can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
                                                            acc_control, stopping, starting, CS.esp_hold_confirmation))
+
+      #if self.aeb_available:
+      #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
+      #    can_sends.append(self.CCS.create_aeb_control(self.packer_pt, False, False, 0.0))
+      #  if self.frame % self.CCP.AEB_HUD_STEP == 0:
+      #    can_sends.append(self.CCS.create_aeb_hud(self.packer_pt, False, False))
 
     # **** HUD Controls ***************************************************** #
 
