@@ -139,6 +139,13 @@ class CarController(CarControllerBase):
           ea_simulated_torque = CS.out.steeringTorque
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
+    # by jyoung anti EA intervention, send default values
+    if self.CP.flags & VolkswagenFlags.MEB:
+      if self.frame % 2 == 0:
+        can_sends.append(mebcan.create_ea_control(self.packer_pt, CANBUS.pt))
+      if self.frame % 50 == 0:
+        can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
+    
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
