@@ -3,31 +3,47 @@
 #include "safety_declarations.h"
 #include "safety_hyundai_common.h"
 
+#define HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(bus) \
+  {0x1CF, bus, 8},  /* CRUISE_BUTTON */          \
+
+#define HYUNDAI_CANFD_LKA_STEERING_COMMON_TX_MSGS(a_can, e_can) \
+  HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                    \
+  {0x50,  a_can, 16},  /* LKAS */                               \
+  {0x2A4, a_can, 24},  /* CAM_0x2A4 */                          \
+
+#define HYUNDAI_CANFD_LKA_STEERING_ALT_COMMON_TX_MSGS(a_can, e_can) \
+  HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(e_can)                        \
+  {0x110, a_can, 32},  /* LKAS_ALT */                               \
+  {0x362, a_can, 32},  /* CAM_0x362 */                              \
+
+#define HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(e_can) \
+  {0x12A, e_can, 16},  /* LFA */                         \
+  {0x1E0, e_can, 16},  /* LFAHDA_CLUSTER */              \
+
+#define HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(e_can) \
+  {0x1A0, e_can, 32},  /* SCC_CONTROL */                \
+
 // *** Addresses checked in rx hook ***
 // EV, ICE, HYBRID: ACCELERATOR (0x35), ACCELERATOR_BRAKE_ALT (0x100), ACCELERATOR_ALT (0x105)
-#define HYUNDAI_CANFD_COMMON_RX_CHECKS(pt_bus)                                                                              \
-  {.msg = {{0x35, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U},                   \
-           {0x100, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U},                  \
-           {0x105, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}}},                \
+#define HYUNDAI_CANFD_COMMON_RX_CHECKS(pt_bus)                                                                     \
+  {.msg = {{0x35, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U},                  \
+           {0x100, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U},                 \
+           {0x105, (pt_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}}},               \
   {.msg = {{0x175, (pt_bus), 24, .check_checksum = true, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}},  \
-  {.msg = {{0xa0, (pt_bus), 24, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}, { 0 }, { 0 }}},   \
-  {.msg = {{0xea, (pt_bus), 24, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}, { 0 }, { 0 }}},   \
-
-#define HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(pt_bus)                                                                            \
-  {.msg = {{0x1cf, (pt_bus), 8, .check_checksum = false, .max_counter = 0xfU, .frequency = 50U}, { 0 }, { 0 }}}, \
-
-#define HYUNDAI_CANFD_ALT_BUTTONS_ADDR_CHECK(pt_bus)                                                                            \
-  {.msg = {{0x1aa, (pt_bus), 16, .check_checksum = false, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}},   \
+  {.msg = {{0xa0, (pt_bus), 24, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}, { 0 }, { 0 }}},  \
+  {.msg = {{0xea, (pt_bus), 24, .check_checksum = true, .max_counter = 0xffU, .frequency = 100U}, { 0 }, { 0 }}},  \
+  {.msg = {{0x1cf, (pt_bus), 8, .check_checksum = false, .max_counter = 0xfU, .frequency = 50U},                   \
+           {0x1aa, (pt_bus), 16, .check_checksum = false, .max_counter = 0xffU, .frequency = 50U}, { 0 }}},        \
 
 // SCC_CONTROL (from ADAS unit or camera)
-#define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                                                                 \
-  {.msg = {{0x1a0, (scc_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}}, \
+#define HYUNDAI_CANFD_SCC_ADDR_CHECK(scc_bus)                                                                       \
+  {.msg = {{0x1a0, (scc_bus), 32, .check_checksum = true, .max_counter = 0xffU, .frequency = 50U}, { 0 }, { 0 }}},  \
 
 static bool hyundai_canfd_alt_buttons = false;
-static bool hyundai_canfd_hda2_alt_steering = false;
+static bool hyundai_canfd_lka_steering_alt = false;
 
-static int hyundai_canfd_hda2_get_lkas_addr(void) {
-  return hyundai_canfd_hda2_alt_steering ? 0x110 : 0x50;
+static int hyundai_canfd_get_lka_addr(void) {
+  return hyundai_canfd_lka_steering_alt ? 0x110 : 0x50;
 }
 
 static uint8_t hyundai_canfd_get_counter(const CANPacket_t *to_push) {
@@ -49,7 +65,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
 
-  const int pt_bus = hyundai_canfd_hda2 ? 1 : 0;
+  const int pt_bus = hyundai_canfd_lka_steering ? 1 : 0;
   const int scc_bus = hyundai_camera_scc ? 2 : pt_bus;
 
   if (bus == pt_bus) {
@@ -108,16 +124,14 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
-  const int steer_addr = hyundai_canfd_hda2 ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
+  const int steer_addr = hyundai_canfd_lka_steering ? hyundai_canfd_get_lka_addr() : 0x12a;
   bool stock_ecu_detected = (addr == steer_addr) && (bus == 0);
   if (hyundai_longitudinal) {
-    // on HDA2, ensure ADRV ECU is still knocked out
+    // on LKA steering cars, ensure ADRV ECU is still knocked out
     // on others, ensure accel msg is blocked from camera
-    const int stock_scc_bus = hyundai_canfd_hda2 ? 1 : 0;
-    stock_ecu_detected = stock_ecu_detected || ((addr == 0x1a0) && (bus == stock_scc_bus));
+    stock_ecu_detected = stock_ecu_detected || ((addr == 0x1a0) && (bus == pt_bus));
   }
   generic_rx_checks(stock_ecu_detected);
-
 }
 
 static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
@@ -128,7 +142,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
     .max_rate_up = 2,
     .max_rate_down = 3,
     .driver_torque_allowance = 250,
-    .driver_torque_factor = 2,
+    .driver_torque_multiplier = 2,
     .type = TorqueDriverLimited,
 
     // the EPS faults when the steering angle is above a certain threshold for too long. to prevent this,
@@ -143,7 +157,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
 
   // steering
-  const int steer_addr = (hyundai_canfd_hda2 && !hyundai_longitudinal) ? hyundai_canfd_hda2_get_lkas_addr() : 0x12a;
+  const int steer_addr = (hyundai_canfd_lka_steering && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12a;
   if (addr == steer_addr) {
     int desired_torque = (((GET_BYTE(to_send, 6) & 0xFU) << 7U) | (GET_BYTE(to_send, 5) >> 1U)) - 1024U;
     bool steer_req = GET_BIT(to_send, 52U);
@@ -166,7 +180,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   }
 
   // UDS: only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
-  if ((addr == 0x730) && hyundai_canfd_hda2) {
+  if (((addr == 0x730) && hyundai_canfd_lka_steering) || ((addr == 0x7D0) && !hyundai_camera_scc)) {
     if ((GET_BYTES(to_send, 0, 4) != 0x00803E02U) || (GET_BYTES(to_send, 4, 4) != 0x0U)) {
       tx = false;
     }
@@ -204,18 +218,18 @@ static int hyundai_canfd_fwd_hook(int bus_num, int addr) {
     bus_fwd = 2;
   }
   if (bus_num == 2) {
-    // LKAS for HDA2, LFA for HDA1
-    int hda2_lfa_block_addr = hyundai_canfd_hda2_alt_steering ? 0x362 : 0x2a4;
-    bool is_lkas_msg = ((addr == hyundai_canfd_hda2_get_lkas_addr()) || (addr == hda2_lfa_block_addr)) && hyundai_canfd_hda2;
-    bool is_lfa_msg = ((addr == 0x12a) && !hyundai_canfd_hda2);
+    // LKAS for cars with LKAS and LFA messages, LFA for cars with no LKAS messages
+    int lfa_block_addr = hyundai_canfd_lka_steering_alt ? 0x362 : 0x2a4;
+    bool is_lka_msg = ((addr == hyundai_canfd_get_lka_addr()) || (addr == lfa_block_addr)) && hyundai_canfd_lka_steering;
+    bool is_lfa_msg = ((addr == 0x12a) && !hyundai_canfd_lka_steering);
 
     // HUD icons
-    bool is_lfahda_msg = ((addr == 0x1e0) && !hyundai_canfd_hda2);
+    bool is_lfahda_msg = ((addr == 0x1e0) && !hyundai_canfd_lka_steering);
 
-    // CRUISE_INFO for non-HDA2, we send our own longitudinal commands
-    bool is_scc_msg = ((addr == 0x1a0) && hyundai_longitudinal && !hyundai_canfd_hda2);
+    // SCC_CONTROL and ADRV_0x160 for camera SCC cars, we send our own longitudinal commands and to show FCA light
+    bool is_scc_msg = (((addr == 0x1a0) || (addr == 0x160)) && hyundai_longitudinal && !hyundai_canfd_lka_steering);
 
-    bool block_msg = is_lkas_msg || is_lfa_msg || is_lfahda_msg || is_scc_msg;
+    bool block_msg = is_lka_msg || is_lfa_msg || is_lfahda_msg || is_scc_msg;
     if (!block_msg) {
       bus_fwd = 0;
     }
@@ -225,127 +239,104 @@ static int hyundai_canfd_fwd_hook(int bus_num, int addr) {
 }
 
 static safety_config hyundai_canfd_init(uint16_t param) {
-  const int HYUNDAI_PARAM_CANFD_HDA2_ALT_STEERING = 128;
+  const int HYUNDAI_PARAM_CANFD_LKA_STEERING_ALT = 128;
   const int HYUNDAI_PARAM_CANFD_ALT_BUTTONS = 32;
 
-  static const CanMsg HYUNDAI_CANFD_HDA2_TX_MSGS[] = {
-    {0x50, 0, 16},  // LKAS
-    {0x1CF, 1, 8},  // CRUISE_BUTTON
-    {0x2A4, 0, 24}, // CAM_0x2A4
+  static const CanMsg HYUNDAI_CANFD_LKA_STEERING_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEERING_COMMON_TX_MSGS(0, 1)
   };
 
-  static const CanMsg HYUNDAI_CANFD_HDA2_ALT_STEERING_TX_MSGS[] = {
-    {0x110, 0, 32}, // LKAS_ALT
-    {0x1CF, 1, 8},  // CRUISE_BUTTON
-    {0x362, 0, 32}, // CAM_0x362
+  static const CanMsg HYUNDAI_CANFD_LKA_STEERING_ALT_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEERING_ALT_COMMON_TX_MSGS(0, 1)
   };
 
-  static const CanMsg HYUNDAI_CANFD_HDA2_LONG_TX_MSGS[] = {
-    {0x50, 0, 16},  // LKAS
-    {0x1CF, 1, 8},  // CRUISE_BUTTON
-    {0x2A4, 0, 24}, // CAM_0x2A4
-    {0x51, 0, 32},  // ADRV_0x51
-    {0x730, 1, 8},  // tester present for ADAS ECU disable
-    {0x12A, 1, 16}, // LFA
-    {0x160, 1, 16}, // ADRV_0x160
-    {0x1E0, 1, 16}, // LFAHDA_CLUSTER
-    {0x1A0, 1, 32}, // CRUISE_INFO
-    {0x1EA, 1, 32}, // ADRV_0x1ea
-    {0x200, 1, 8},  // ADRV_0x200
-    {0x345, 1, 8},  // ADRV_0x345
-    {0x1DA, 1, 32}, // ADRV_0x1da
+  static const CanMsg HYUNDAI_CANFD_LKA_STEERING_LONG_TX_MSGS[] = {
+    HYUNDAI_CANFD_LKA_STEERING_COMMON_TX_MSGS(0, 1)
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(1)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(1)
+    {0x51,  0, 32},  // ADRV_0x51
+    {0x730, 1,  8},  // tester present for ADAS ECU disable
+    {0x160, 1, 16},  // ADRV_0x160
+    {0x1EA, 1, 32},  // ADRV_0x1ea
+    {0x200, 1,  8},  // ADRV_0x200
+    {0x345, 1,  8},  // ADRV_0x345
+    {0x1DA, 1, 32},  // ADRV_0x1da
   };
 
-  static const CanMsg HYUNDAI_CANFD_HDA1_TX_MSGS[] = {
-    {0x12A, 0, 16}, // LFA
-    {0x1A0, 0, 32}, // CRUISE_INFO
-    {0x1CF, 2, 8},  // CRUISE_BUTTON
-    {0x1E0, 0, 16}, // LFAHDA_CLUSTER
+  static const CanMsg HYUNDAI_CANFD_LFA_STEERING_TX_MSGS[] = {
+    HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2)
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0)
   };
 
+  static const CanMsg HYUNDAI_CANFD_LFA_STEERING_LONG_TX_MSGS[] = {
+    HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2)
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0)
+    {0x160, 0, 16}, // ADRV_0x160
+    {0x7D0, 0, 8},  // tester present for radar ECU disable
+  };
+
+  static const CanMsg HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS[] = {
+    HYUNDAI_CANFD_CRUISE_BUTTON_TX_MSGS(2)
+    HYUNDAI_CANFD_LFA_STEERING_COMMON_TX_MSGS(0)
+    HYUNDAI_CANFD_SCC_CONTROL_COMMON_TX_MSGS(0)
+    {0x160, 0, 16}, // ADRV_0x160
+  };
 
   hyundai_common_init(param);
 
   gen_crc_lookup_table_16(0x1021, hyundai_canfd_crc_lut);
   hyundai_canfd_alt_buttons = GET_FLAG(param, HYUNDAI_PARAM_CANFD_ALT_BUTTONS);
-  hyundai_canfd_hda2_alt_steering = GET_FLAG(param, HYUNDAI_PARAM_CANFD_HDA2_ALT_STEERING);
-
-  // no long for radar-SCC HDA1 yet
-  if (!hyundai_canfd_hda2 && !hyundai_camera_scc) {
-    hyundai_longitudinal = false;
-  }
+  hyundai_canfd_lka_steering_alt = GET_FLAG(param, HYUNDAI_PARAM_CANFD_LKA_STEERING_ALT);
 
   safety_config ret;
   if (hyundai_longitudinal) {
-    if (hyundai_canfd_hda2) {
-      static RxCheck hyundai_canfd_hda2_long_rx_checks[] = {
+    if (hyundai_canfd_lka_steering) {
+      static RxCheck hyundai_canfd_lka_steering_long_rx_checks[] = {
         HYUNDAI_CANFD_COMMON_RX_CHECKS(1)
-        HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(1)
       };
 
-      ret = BUILD_SAFETY_CFG(hyundai_canfd_hda2_long_rx_checks, HYUNDAI_CANFD_HDA2_LONG_TX_MSGS);
+      ret = BUILD_SAFETY_CFG(hyundai_canfd_lka_steering_long_rx_checks, HYUNDAI_CANFD_LKA_STEERING_LONG_TX_MSGS);
     } else {
-      static RxCheck hyundai_canfd_long_alt_buttons_rx_checks[] = {
-        HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_ALT_BUTTONS_ADDR_CHECK(0)
-      };
-
-      // Longitudinal checks for HDA1
+      // Longitudinal checks for LFA steering
       static RxCheck hyundai_canfd_long_rx_checks[] = {
         HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(0)
       };
 
-      ret = hyundai_canfd_alt_buttons ? BUILD_SAFETY_CFG(hyundai_canfd_long_alt_buttons_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS) : \
-                                        BUILD_SAFETY_CFG(hyundai_canfd_long_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS);
+      ret = hyundai_camera_scc ? BUILD_SAFETY_CFG(hyundai_canfd_long_rx_checks, HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS) : \
+                                 BUILD_SAFETY_CFG(hyundai_canfd_long_rx_checks, HYUNDAI_CANFD_LFA_STEERING_LONG_TX_MSGS);
     }
   } else {
-    if (hyundai_canfd_hda2) {
-      // *** HDA2 checks ***
-      // E-CAN is on bus 1, ADAS unit sends SCC messages on HDA2.
+    if (hyundai_canfd_lka_steering) {
+      // *** LKA steering checks ***
+      // E-CAN is on bus 1, SCC messages are sent on cars with ADRV ECU.
       // Does not use the alt buttons message
-      static RxCheck hyundai_canfd_hda2_rx_checks[] = {
+      static RxCheck hyundai_canfd_lka_steering_rx_checks[] = {
         HYUNDAI_CANFD_COMMON_RX_CHECKS(1)
-        HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(1)
         HYUNDAI_CANFD_SCC_ADDR_CHECK(1)
       };
 
-      ret = hyundai_canfd_hda2_alt_steering ? BUILD_SAFETY_CFG(hyundai_canfd_hda2_rx_checks, HYUNDAI_CANFD_HDA2_ALT_STEERING_TX_MSGS) : \
-                                              BUILD_SAFETY_CFG(hyundai_canfd_hda2_rx_checks, HYUNDAI_CANFD_HDA2_TX_MSGS);
+      ret = hyundai_canfd_lka_steering_alt ? BUILD_SAFETY_CFG(hyundai_canfd_lka_steering_rx_checks, HYUNDAI_CANFD_LKA_STEERING_ALT_TX_MSGS) : \
+                                              BUILD_SAFETY_CFG(hyundai_canfd_lka_steering_rx_checks, HYUNDAI_CANFD_LKA_STEERING_TX_MSGS);
     } else if (!hyundai_camera_scc) {
-      static RxCheck hyundai_canfd_radar_scc_alt_buttons_rx_checks[] = {
-        HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_ALT_BUTTONS_ADDR_CHECK(0)
-        HYUNDAI_CANFD_SCC_ADDR_CHECK(0)
-      };
-
       // Radar sends SCC messages on these cars instead of camera
       static RxCheck hyundai_canfd_radar_scc_rx_checks[] = {
         HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(0)
         HYUNDAI_CANFD_SCC_ADDR_CHECK(0)
       };
 
-      ret = hyundai_canfd_alt_buttons ? BUILD_SAFETY_CFG(hyundai_canfd_radar_scc_alt_buttons_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS) : \
-                                        BUILD_SAFETY_CFG(hyundai_canfd_radar_scc_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS);
+      ret = BUILD_SAFETY_CFG(hyundai_canfd_radar_scc_rx_checks, HYUNDAI_CANFD_LFA_STEERING_TX_MSGS);
     } else {
-      // *** Non-HDA2 checks ***
-      static RxCheck hyundai_canfd_alt_buttons_rx_checks[] = {
-        HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_ALT_BUTTONS_ADDR_CHECK(0)
-        HYUNDAI_CANFD_SCC_ADDR_CHECK(2)
-      };
-
-      // Camera sends SCC messages on HDA1.
+      // *** LFA steering checks ***
+      // Camera sends SCC messages on LFA steering cars.
       // Both button messages exist on some platforms, so we ensure we track the correct one using flag
       static RxCheck hyundai_canfd_rx_checks[] = {
         HYUNDAI_CANFD_COMMON_RX_CHECKS(0)
-        HYUNDAI_CANFD_BUTTONS_ADDR_CHECK(0)
         HYUNDAI_CANFD_SCC_ADDR_CHECK(2)
       };
 
-      ret = hyundai_canfd_alt_buttons ? BUILD_SAFETY_CFG(hyundai_canfd_alt_buttons_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS) : \
-                                        BUILD_SAFETY_CFG(hyundai_canfd_rx_checks, HYUNDAI_CANFD_HDA1_TX_MSGS);
+      ret = BUILD_SAFETY_CFG(hyundai_canfd_rx_checks, HYUNDAI_CANFD_LFA_STEERING_CAMERA_SCC_TX_MSGS);
     }
   }
 
