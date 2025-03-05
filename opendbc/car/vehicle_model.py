@@ -63,6 +63,35 @@ class VehicleModel:
       return dyn_ss_sol(sa, u, roll, self)
     else:
       return kin_ss_sol(sa, u, self)
+      
+  def calc_curvature_3dof(self, a_y: float, a_x: float, yaw_rate: float, u_measured: float, sa: float, roll: float) -> float:
+    """
+    Calculate the current curvature based on measured inputs.
+    
+    Args:
+      a_y: Measured lateral acceleration [m/s^2].
+      a_x: Measured longitudinal acceleration [m/s^2].
+      yaw_rate: Measured yaw rate [rad/s].
+      u_measured: Measured longitudinal speed [m/s].
+      sa: Steering angle [rad].
+      roll: Road Roll [rad].
+    
+    Returns:
+      Calculated curvature factor [1/m].
+    """
+    u = max(u_measured, 0.1)
+    
+    v = a_y / u if u > 0.1 else 0.0
+    A, B = create_dyn_state_matrices_3dof(u, v, yaw_rate, self)
+    A += 1e-7 * np.eye(A.shape[0])
+    input_vector = np.array([sa, a_x])
+    state = -solve(A, B @ input_vector)
+    curvature_3dof = state[2] / state[0] if state[0] > 0.1 else 0.0
+
+    roll_compensation = self.roll_compensation(roll, u)
+    curvature_3dof += roll_compensation
+    
+    return curvature_3dof
 
   def calc_curvature(self, sa: float, u: float, roll: float) -> float:
     """Returns the curvature. Multiplied by the speed this will give the yaw rate.
@@ -201,6 +230,40 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> tuple[np.ndarray, n
 
   # Roll input
   B[0, 1] = -ACCELERATION_DUE_TO_GRAVITY
+
+  return A, B
+  
+  
+def create_dyn_state_matrices_3dof(u: float, v: float, yaw_rate: float, VM: VehicleModel) -> tuple[np.ndarray, np.ndarray]:
+  """Returns the A and B matrix for the 3-DoF dynamics system
+
+  Args:
+    u: Longitudinal speed [m/s]
+    v: Lateral speed [m/s]
+    yaw_rate: Yaw rate [rad/s]
+    VM: Vehicle model
+
+  Returns:
+    A tuple with the 3x3 A matrix, and 3x2 B matrix
+  """
+  A = np.zeros((3, 3))
+  B = np.zeros((3, 2))
+
+  A[0, 0] = 0
+  A[0, 1] = 0
+  A[0, 2] = 0
+  B[0, 1] = 1
+
+  A[1, 0] = 0
+  A[1, 1] = - (VM.cF + VM.cR) / (VM.m * u)
+  A[1, 2] = - u - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.m * u)
+
+  A[2, 0] = 0
+  A[2, 1] = - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.j * u)
+  A[2, 2] = - (VM.cF * VM.aF**2 + VM.cR * VM.aR**2) / (VM.j * u)
+
+  B[1, 0] = VM.cF / (VM.m * VM.sR)
+  B[2, 0] = VM.cF * VM.aF / (VM.j * VM.sR)
 
   return A, B
 
