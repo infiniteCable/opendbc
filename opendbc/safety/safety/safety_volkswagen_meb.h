@@ -129,10 +129,10 @@ static safety_config volkswagen_meb_init(uint16_t param) {
 }
 
 // lateral limits for curvature
-static const SteeringLimits VOLKSWAGEN_MEB_STEERING_LIMITS = {
+static const AngleSteeringLimits VOLKSWAGEN_MEB_STEERING_LIMITS = {
   // keep in mind, we do have a false tx block problem with same limits as in opendbc values, have them a little bit higher +0.0002 
   // for FORD enforce_angle_error is active with margin of 0.002 which could solve the issue, we have here
-  .max_steer = 29105, // 0.195 rad/m
+  .max_angle = 29105, // 0.195 rad/m
   .angle_deg_to_can = 149253.7313, // 1 / 6.7e-6 rad/m to can
   .angle_rate_up_lookup = {
     {5., 25., 25.},
