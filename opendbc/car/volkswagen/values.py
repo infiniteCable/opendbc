@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
 from opendbc.can.can_define import CANDefine
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds, AngleRateLimit
+from opendbc.car import AngleSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car import structs
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
@@ -83,11 +83,13 @@ class CarControllerParams:
       self.STEERING_POWER_MAX_BY_SPEED     = 20    # HCA_03 speed in m/s^2 where maximum steering power is reached
       self.CURVATURE_MAX                   = 0.195 # HCA_03 maximum curvature in 1/m
       self.CURVATURE_ERROR                 = 0.01  # HCA_03 angle error
-      #self.ANGLE_RATE_LIMIT_UP             = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[0.005, 0.0015, 0.00015]) # curvature safety limit up
-      #self.ANGLE_RATE_LIMIT_DOWN           = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[0.005, 0.0034, 0.00034]) # curvature safety limit down
-      self.ANGLE_RATE_LIMIT_UP             = AngleRateLimit(speed_bp=[5., 25.], angle_v=[0.0015, 0.00015])  # curvature safety limit up
-      self.ANGLE_RATE_LIMIT_DOWN           = AngleRateLimit(speed_bp=[5., 25.], angle_v=[0.002, 0.00035])   # curvature safety limit down
       self.CURVATURE_POWER_FACTOR          = 4000
+      
+      ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
+        0.195,  # Max curvature for steering command, m^-1
+        ([5, 25], [0.0015, 0.00015]), # curvature safety limit up
+        ([5, 25], [0.002, 0.00035]) # curvature safety limit down
+      )
 
       self.shifter_values    = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
       self.hca_status_values = can_define.dv["QFK_01"]["LatCon_HCA_Status"]
