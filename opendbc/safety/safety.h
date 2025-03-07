@@ -339,7 +339,7 @@ void generic_rx_checks(bool stock_ecu_detected) {
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-    if (alternative_experience & DONT_DISENGAGE_LAT_ON_BRAKE) {
+    if (alternative_experience & ALT_EXP_DONT_DISENGAGE_LAT_ON_BRAKE) {
       lateral_only_mode = true;
     } else {
       controls_allowed = false;
