@@ -585,7 +585,7 @@ int ROUND(float val) {
 // Safety checks for longitudinal actuation
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits) {
   if (lateral_only_mode) {
-    return desired_accel != limits.inactive_accel;
+    return desired_accel == limits.inactive_accel;
   }
 	
   bool accel_valid = get_longitudinal_allowed() && !max_limit_check(desired_accel, limits.max_accel, limits.min_accel);
