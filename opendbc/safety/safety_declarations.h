@@ -223,6 +223,8 @@ extern struct sample_t torque_driver;     // last 6 driver torques measured
 extern uint32_t ts_torque_check_last;
 extern uint32_t ts_steer_req_mismatch_last;  // last timestamp steer req was mismatched with torque
 
+extern bool lateral_only_mode;
+
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command
 extern uint32_t heartbeat_engaged_mismatches;  // count of mismatches between heartbeat_engaged and controls_allowed
@@ -249,6 +251,9 @@ extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 // This flag allows AEB to be commanded from openpilot.
 #define ALT_EXP_ALLOW_AEB 16
+
+// This flag allows lateral controls to still be enabled after braking while long is not allowed
+#define ALT_EXP_DONT_DISENGAGE_LAT_ON_BRAKE 32
 
 extern int alternative_experience;
 
