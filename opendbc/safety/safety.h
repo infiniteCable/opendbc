@@ -104,6 +104,8 @@ uint32_t ts_angle_last = 0;
 int desired_angle_last = 0;
 struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
+bool lateral_only_mode = false;
+
 
 int alternative_experience = 0;
 
@@ -258,7 +260,7 @@ int safety_fwd_hook(int bus_num, int addr) {
 }
 
 bool get_longitudinal_allowed(void) {
-  return controls_allowed && !gas_pressed_prev;
+  return controls_allowed && !lateral_only_mode && !gas_pressed_prev;
 }
 
 // Given a CRC-8 poly, generate a static lookup table to use with a fast CRC-8
@@ -337,7 +339,11 @@ void generic_rx_checks(bool stock_ecu_detected) {
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-    controls_allowed = false;
+    if (alternative_experience & DONT_DISENGAGE_LAT_ON_BRAKE) {
+      lateral_only_mode = true;
+    } else {
+      controls_allowed = false;
+    }
   }
   brake_pressed_prev = brake_pressed;
 
@@ -578,6 +584,10 @@ int ROUND(float val) {
 
 // Safety checks for longitudinal actuation
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits) {
+  if (lateral_only_mode) {
+    return desired_accel != limits.inactive_accel;
+  }
+	
   bool accel_valid = get_longitudinal_allowed() && !max_limit_check(desired_accel, limits.max_accel, limits.min_accel);
   bool accel_inactive = desired_accel == limits.inactive_accel;
   return !(accel_valid || accel_inactive);
@@ -795,6 +805,7 @@ void pcm_cruise_check(bool cruise_engaged) {
   }
   if (cruise_engaged && !cruise_engaged_prev) {
     controls_allowed = true;
+    lateral_only_mode = false;
   }
   cruise_engaged_prev = cruise_engaged;
 }
