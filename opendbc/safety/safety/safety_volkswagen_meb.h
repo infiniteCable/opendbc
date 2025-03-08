@@ -146,7 +146,8 @@ static const AngleSteeringLimits VOLKSWAGEN_MEB_STEERING_LIMITS = {
     {0.0022, 0.00055, 0.00055}
   },
   //.max_angle_error = ,         // THIS WOULD ALLOW MORE ROOM FOR OUR RATE LIMITS see comment above, but we want correct safety limit checks? and
-  //.enforce_angle_error = true, // to allow some difference for our power control handling at the same time 
+  //.enforce_angle_error = true, // to allow some difference for our power control handling at the same time
+  .angle_is_curvature = true, // our rates are higher than ISO and are useless, ISO is enforced in OP controls and our rates never reached
   .inactive_angle_is_zero = true,
 };
 
