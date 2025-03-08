@@ -33,6 +33,9 @@ static bool vw_meb_max_limit_check(int val, const int MAX_VAL, const int MIN_VAL
 
 // Safety checks for longitudinal actuation
 static bool vw_meb_longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits, const int override_accel) {
+  if (lateral_only_mode) {
+    return desired_accel == limits.inactive_accel;
+  }
   bool accel_valid = get_longitudinal_allowed() && !vw_meb_max_limit_check(desired_accel, limits.max_accel, limits.min_accel);
   bool accel_valid_override = vw_meb_get_longitudinal_allowed_override() && desired_accel == override_accel;
   bool accel_inactive = desired_accel == limits.inactive_accel;

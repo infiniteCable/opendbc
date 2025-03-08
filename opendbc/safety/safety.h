@@ -585,7 +585,7 @@ int ROUND(float val) {
 // Safety checks for longitudinal actuation
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits) {
   if (lateral_only_mode) {
-    return desired_accel != limits.inactive_accel;
+    return desired_accel == limits.inactive_accel;
   }
 	
   bool accel_valid = get_longitudinal_allowed() && !max_limit_check(desired_accel, limits.max_accel, limits.min_accel);
@@ -799,13 +799,19 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
 }
 
 void pcm_cruise_check(bool cruise_engaged) {
-  // Enter controls on rising edge of stock ACC, exit controls if stock ACC disengages
   if (!cruise_engaged) {
-    controls_allowed = false;
+    if (!lateral_only_mode) {  
+      controls_allowed = false;
+    }
   }
+
   if (cruise_engaged && !cruise_engaged_prev) {
     controls_allowed = true;
-    lateral_only_mode = false;
+
+    if (!lateral_only_mode) {
+      lateral_only_mode = false;
+    }
   }
+
   cruise_engaged_prev = cruise_engaged;
 }
