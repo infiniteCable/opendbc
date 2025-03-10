@@ -21,7 +21,7 @@ MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL)  # ~2.4 m/
 
 
 # this should be a dedicated tool method, but also is redundant because ISO 11270 is enforced in controls, for VW MEB rate limiting does not make sense
-def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw, steering_angle, lat_active, CP):
+def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CP):
   # Curvature rate limit (this is more than ISO 11270 below would allow right now, restiance is futile, comply)
   apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CarControllerParams.ANGLE_LIMITS)
 
