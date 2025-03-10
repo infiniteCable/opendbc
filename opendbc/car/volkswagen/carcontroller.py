@@ -11,6 +11,28 @@ from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, Volkswage
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
+# ISO 11270
+ISO_LATERAL_ACCEL = 3.0  # m/s^2  # TODO: import from test lateral limits file?
+
+# Limit to average banked road since safety doesn't have the roll
+EARTH_G = 9.81
+AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation
+MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL)  # ~2.4 m/s^2
+
+
+# this should be a dedicated tool method, but also is redundant because ISO 11270 is enforced in controls, for VW MEB rate limiting does not make sense
+def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw, steering_angle, lat_active, CP):
+  # Curvature rate limit (this is more than ISO 11270 below would allow right now, restiance is futile, comply)
+  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CarControllerParams.ANGLE_LIMITS)
+
+  # ISO 11270
+  # Safety is not aware of the road roll so we subtract a conservative amount at all times
+  # Limit curvature to conservative max lateral acceleration
+  curvature_accel_limit = MAX_LATERAL_ACCEL / (max(v_ego_raw, 1) ** 2)
+  apply_curvature = float(np.clip(apply_curvature, -curvature_accel_limit, curvature_accel_limit))
+
+  return apply_curvature
+
 
 def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
   # jerk limit are used to improve comfort
@@ -111,10 +133,10 @@ class CarController(CarControllerBase):
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
           apply_curvature = actuator_curvature_with_offset #self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
-          apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP.ANGLE_LIMITS)
+          apply_curvature = apply_vw_meb_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP.ANGLE_LIMITS) # apply ISO 11270 limit lateral acceleration
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-          apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
+            apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
 
           steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
