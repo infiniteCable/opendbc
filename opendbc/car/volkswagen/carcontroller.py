@@ -29,9 +29,10 @@ def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, v_ego_r
   # Safety is not aware of the road roll so we subtract a conservative amount at all times
   # Limit curvature to conservative max lateral acceleration
   curvature_accel_limit = MAX_LATERAL_ACCEL / (max(v_ego_raw, 1) ** 2)
+  iso_limit_active = True if abs(curvature_accel_limit) < abs(apply_curvature) else False
   apply_curvature = float(np.clip(apply_curvature, -curvature_accel_limit, curvature_accel_limit))
 
-  return apply_curvature
+  return apply_curvature, iso_limit_active
 
 
 def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
@@ -133,7 +134,7 @@ class CarController(CarControllerBase):
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
           apply_curvature = actuator_curvature_with_offset #self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
-          apply_curvature = apply_vw_meb_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP) # apply ISO 11270 limit lateral acceleration
+          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP) # apply ISO 11270 limit lateral acceleration
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
             apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
@@ -148,7 +149,8 @@ class CarController(CarControllerBase):
           if self.steering_power_last < self.CCP.STEERING_POWER_MIN:  # OP lane assist just activated
             steering_power = min(self.steering_power_last + self.CCP.STEERING_POWER_STEPS, self.CCP.STEERING_POWER_MIN)
           elif CS.out.steeringPressed:  # user action results in decreasing the steering power
-            steering_power_user = max(steering_power_target / 100 * (100 - self.CCP.STEERING_POWER_USER_REDUCTION), self.CCP.STEERING_POWER_MIN)
+            power_reduction_percent = self.CCP.STEERING_POWER_USER_REDUCTION_ISO if iso_limit_active else self.CCP.STEERING_POWER_USER_REDUCTION # iso works strictly AGAINST user, reduce power further for this case
+            steering_power_user = max(steering_power_target / 100 * (100 - power_reduction_percent), self.CCP.STEERING_POWER_MIN)
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEPS, steering_power_user)
           else: # following desired target
             if self.steering_power_last < steering_power_target:
