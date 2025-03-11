@@ -313,7 +313,7 @@ static bool volkswagen_meb_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static int volkswagen_meb_fwd_hook(int bus_num, int addr) {
+static bool volkswagen_meb_fwd_hook(int bus_num, int addr) {
   bool block_msg = false;
 
   switch (bus_num) {
