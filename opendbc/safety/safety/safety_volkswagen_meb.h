@@ -96,13 +96,13 @@ static uint32_t volkswagen_meb_compute_crc(const CANPacket_t *to_push) {
 
 static safety_config volkswagen_meb_init(uint16_t param) {
   // Transmit of GRA_ACC_01 is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
-  static const CanMsg VOLKSWAGEN_MEB_STOCK_TX_MSGS[] = {{MSG_HCA_03, 0, 24}, {MSG_GRA_ACC_01, 0, 8},
-                                                       {MSG_EA_01, 0, 8}, {MSG_EA_02, 0, 8},
-                                                       {MSG_GRA_ACC_01, 2, 8}, {MSG_LDW_02, 0, 8}};
+  static const CanMsg VOLKSWAGEN_MEB_STOCK_TX_MSGS[] = {{MSG_HCA_03, 0, 24, true}, {MSG_GRA_ACC_01, 0, 8, false},
+                                                       {MSG_EA_01, 0, 8, false}, {MSG_EA_02, 0, 8, false},
+                                                       {MSG_GRA_ACC_01, 2, 8, false}, {MSG_LDW_02, 0, 8, false}};
   
-  static const CanMsg VOLKSWAGEN_MEB_LONG_TX_MSGS[] = {{MSG_MEB_ACC_01, 0, 48}, {MSG_ACC_18, 0, 32}, {MSG_HCA_03, 0, 24},
-                                                       {MSG_EA_01, 0, 8}, {MSG_EA_02, 0, 8},
-                                                       {MSG_LDW_02, 0, 8}, {MSG_TA_01, 0, 8}};
+  static const CanMsg VOLKSWAGEN_MEB_LONG_TX_MSGS[] = {{MSG_MEB_ACC_01, 0, 48, false}, {MSG_ACC_18, 0, 32, false}, {MSG_HCA_03, 0, 24, true},
+                                                       {MSG_EA_01, 0, 8, false}, {MSG_EA_02, 0, 8, false},
+                                                       {MSG_LDW_02, 0, 8, false}, {MSG_TA_01, 0, 8, false}};
 
   static RxCheck volkswagen_meb_rx_checks[] = {
     {.msg = {{MSG_LH_EPS_03, 0, 8, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}},
@@ -242,7 +242,6 @@ static void volkswagen_meb_rx_hook(const CANPacket_t *to_push) {
       gas_pressed = accel_pedal_value != 0;
     }
 
-    generic_rx_checks((addr == MSG_HCA_03));
   }
 }
 
@@ -315,31 +314,26 @@ static bool volkswagen_meb_tx_hook(const CANPacket_t *to_send) {
 }
 
 static int volkswagen_meb_fwd_hook(int bus_num, int addr) {
-  int bus_fwd = -1;
+  bool block_msg = false;
 
   switch (bus_num) {
     case 0:
-      bus_fwd = 2;
       break;
     case 2:
       if ((addr == MSG_HCA_03) || (addr == MSG_LDW_02) || (addr == MSG_EA_01) || (addr == MSG_EA_02)) {
         // openpilot takes over LKAS steering control and related HUD messages from the camera
-        bus_fwd = -1;
+        block_msg = true;
       } else if (volkswagen_longitudinal && ((addr == MSG_MEB_ACC_01) || (addr == MSG_ACC_18) || (addr == MSG_TA_01))) {
         // openpilot takes over acceleration/braking control and related HUD messages from the stock ACC radar
-        bus_fwd = -1;
+        block_msg = true;
       } else {
-        // Forward all remaining traffic from Extended CAN devices to J533 gateway
-        bus_fwd = 0;
       }
       break;
     default:
-      // No other buses should be in use; fallback to do-not-forward
-      bus_fwd = -1;
       break;
   }
 
-  return bus_fwd;
+  return block_msg;
 }
 
 const safety_hooks volkswagen_meb_hooks = {
