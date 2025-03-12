@@ -167,6 +167,18 @@ static void volkswagen_meb_rx_hook(const CANPacket_t *to_push) {
       UPDATE_VEHICLE_SPEED(((fr + rr + rl + fl) / 4 ) * 0.0075 / 3.6);
     }
 
+    // Update driver input torque samples
+    // Signal: LH_EPS_03.EPS_Lenkmoment (absolute torque)
+    // Signal: LH_EPS_03.EPS_VZ_Lenkmoment (direction)
+    if (addr == MSG_LH_EPS_03) {
+      int torque_driver_new = GET_BYTE(to_push, 5) | ((GET_BYTE(to_push, 6) & 0x1FU) << 8);
+      if (torque_driver_new > 80) {
+        steering_pressed = true;
+      } else {
+        steering_pressed = false;
+      }
+    }
+
     // Update vehicle yaw rate for curvature checks
     //if (addr == MSG_ESC_50) {
     //  float volkswagen_yaw_rate = (GET_BYTE(to_push, 5U) | ((GET_BYTE(to_push, 6U) & 0x3F) << 8 )) * 0.01;
