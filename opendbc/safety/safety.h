@@ -106,6 +106,12 @@ struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 bool lateral_only_mode = false;
 
+bool soft_limit_active = false;
+uint32_t soft_limit_timer = 0;
+int soft_limit_counter = 0;
+int soft_limit_steps = 0;
+float soft_limit_start_curvature = 0.0;
+
 
 int alternative_experience = 0;
 
@@ -819,6 +825,63 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
 
   // No angle control allowed when controls are not allowed
   violation |= !controls_allowed && steer_control_enabled;
+
+  return violation;
+}
+
+bool lateral_iso_limit_check(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits) {
+  bool violation = false;
+
+  if (controls_allowed && steer_control_enabled) {
+    // ISO 11270 Limits
+    static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
+    static const float EARTH_G = 9.81;
+    static const float AVERAGE_ROAD_ROLL = 0.06;  
+    static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);  
+
+    const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
+    const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
+    
+    const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1;
+    const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1;
+
+    bool iso_limit_exceeded = abs(desired_angle) > max_curvature_upper;
+
+    if (!iso_limit_exceeded) {
+      soft_limit_active = false;
+    }
+
+    if (steering_pressed && iso_limit_exceeded) {
+      soft_limit_active = true;
+      soft_limit_timer = microsecond_timer_get() + 2000000;
+      soft_limit_counter = 0;
+      soft_limit_start_curvature = desired_angle_last;
+    }
+
+    if (soft_limit_active) {
+      soft_limit_counter += 1;
+      float alpha = MIN(1.0, (float)soft_limit_counter / (float)soft_limit_steps);
+      int target_curvature = (1 - alpha) * soft_limit_start_curvature + alpha * desired_angle;
+      desired_angle = target_curvature;
+
+      if (microsecond_timer_get() >= soft_limit_timer) {
+        soft_limit_active = false;
+      }
+    } else {
+      if (desired_angle > 0) {
+        desired_angle = CLAMP(desired_angle, -max_curvature_lower, max_curvature_lower);
+      } else {
+        desired_angle = CLAMP(desired_angle, -max_curvature_upper, max_curvature_upper);
+      }
+    }
+
+    violation |= max_limit_check(desired_angle, max_curvature_upper, max_curvature_lower);
+  }
+
+  if (!controls_allowed || violation) {
+    soft_limit_active = false;
+    desired_angle = 0;
+  }
 
   return violation;
 }
