@@ -109,7 +109,7 @@ bool lateral_only_mode = false;
 bool soft_limit_active = false;
 uint32_t soft_limit_timer = 0;
 float soft_limit_start_curvature = 0.0;
-
+bool steering_pressed = false;
 
 int alternative_experience = 0;
 
