@@ -139,7 +139,7 @@ class CarController(CarControllerBase):
           apply_curvature = actuator_curvature_with_offset #self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
           #apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP) # apply ISO 11270 limit lateral acceleration
           apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP.ANGLE_LIMITS)
-          apply_curvature, iso_limit_active = self.lateral_iso_controller.update(CS.out.vEgoRaw, apply_curvature, CS.out.steeringPressed)
+          apply_curvature, iso_limit_active = self.lateral_iso_controller.update(CS.out.vEgoRaw, apply_curvature, CS.curvature, CS.out.steeringPressed)
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
           apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
