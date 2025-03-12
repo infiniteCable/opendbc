@@ -852,7 +852,7 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
     if (steering_pressed && iso_limit_exceeded && !soft_limit_active) {
       soft_limit_active = true;
       soft_limit_timer = microsecond_timer_get();
-      soft_limit_start_curvature = desired_curvature_last;
+      soft_limit_start_curvature = desired_angle_last;
     }
 
     if (soft_limit_active) {
