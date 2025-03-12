@@ -843,7 +843,7 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
     const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1;
     const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1;
 
-    bool iso_limit_exceeded = abs(desired_curvature) > max_curvature_upper;
+    bool iso_limit_exceeded = ABS(desired_curvature) > max_curvature_upper;
 
     if (!iso_limit_exceeded) {
       soft_limit_active = false;
