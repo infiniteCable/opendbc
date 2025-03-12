@@ -168,6 +168,7 @@ class CarController(CarControllerBase):
           steering_power_boost = True if steering_power == self.CCP.STEERING_POWER_MAX else False
           
         else:
+          self.lateral_iso_controller.reset()
           steering_power_boost = False
           if self.steering_power_last > 0: # keep HCA alive until steering power has reduced to zero
             hca_enabled = True
