@@ -230,6 +230,7 @@ extern bool lateral_only_mode;
 extern bool soft_limit_active;
 extern uint32_t soft_limit_timer;
 extern float soft_limit_start_curvature;
+extern bool steering_pressed;
 
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command
