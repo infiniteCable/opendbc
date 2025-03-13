@@ -882,7 +882,7 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
     steering_pressed_prev = false;
   }
 
-  return max_limit_check(desired_curvature, allowed_curvature, -allowed_curvature);
+  return max_limit_check(desired_curvature, MAX(allowed_curvature, -allowed_curvature), MIN(allowed_curvature, -allowed_curvature));
 }
 
 void pcm_cruise_check(bool cruise_engaged) {
