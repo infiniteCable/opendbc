@@ -841,13 +841,14 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
 
   const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
   const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
+	
   const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
   const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
-	
   const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : max_curvature_lower;
-  const int current_curvature = angle_meas.values[0];
+	
+  const int current_curvature = (desired_curvature >= 0) ? angle_meas.max : angle_meas.min;
 
-  bool iso_limit_exceeded = (desired_curvature > max_curvature_upper) || (desired_curvature < -max_curvature_lower);
+  bool iso_limit_exceeded = ABS(desired_curvature) > max_curvature;
   int allowed_curvature = desired_curvature;
 
   if (iso_limit_exceeded) {
