@@ -836,14 +836,18 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
   static const float EARTH_G = 9.81;
   static const float AVERAGE_ROAD_ROLL = 0.06;
   static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);
+  static const int SOFT_LIMIT_DURATION_US = 2000000;
 
-  const float speed = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
-  const int max_curvature = (MAX_LATERAL_ACCEL / (speed * speed) * limits.angle_deg_to_can);
-  int current_curvature = angle_meas.min;  // Aktuelle gemessene Krümmung
+  const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
+  const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
+  const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
+  const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
+	
+  const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : max_curvature_lower;
+  const int current_curvature = (desired_curvature >= 0) ? angle_meas.max : angle_meas.min;
 
   bool iso_limit_exceeded = ABS(desired_curvature) > max_curvature;
-  static bool steering_pressed_prev = false;  // Vorheriger Zustand von `steering_pressed`
-  int allowed_curvature = desired_curvature;  // Standardmäßig erlauben wir den gewünschten Wert
+  int allowed_curvature = desired_curvature;
 
   if (iso_limit_exceeded) {
     if (steering_pressed) {
@@ -860,10 +864,10 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
           soft_limit_start_curvature = desired_curvature;
         }
 
-        float alpha = MIN(1.0, (float)get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) / 2000000.0);
+        float alpha = MIN(1.0, (float)get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) / SOFT_LIMIT_DURATION_US);
         allowed_curvature = (1 - alpha) * soft_limit_start_curvature + alpha * CLAMP(desired_curvature, -max_curvature, max_curvature);
 
-        if (get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) >= 2000000) {
+        if (get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) >= SOFT_LIMIT_DURATION_US) {
           soft_limit_active = false;
           steering_pressed_prev = false;
         }
