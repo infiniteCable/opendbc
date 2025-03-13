@@ -844,11 +844,11 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
 	
   const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
   const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
-  const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : max_curvature_lower;
-	
+  
+  const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : -max_curvature_lower;
   const int current_curvature = (desired_curvature >= 0) ? angle_meas.max : angle_meas.min;
 
-  bool iso_limit_exceeded = ABS(desired_curvature) > max_curvature;
+  bool iso_limit_exceeded = ABS(desired_curvature) > ABS(max_curvature);
   int allowed_curvature = desired_curvature;
 
   if (iso_limit_exceeded) {
@@ -862,18 +862,18 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
         if (!soft_limit_active) {
           soft_limit_active = true;
           soft_limit_timer = microsecond_timer_get();
-          soft_limit_start_curvature = desired_curvature;
+          soft_limit_start_curvature = current_curvature;
         }
 
         float alpha = MIN(1.0, (float)get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) / SOFT_LIMIT_DURATION_US);
-        allowed_curvature = (1 - alpha) * soft_limit_start_curvature + alpha * CLAMP(desired_curvature, -max_curvature, max_curvature);
+        allowed_curvature = (1 - alpha) * soft_limit_start_curvature + alpha * CLAMP(desired_curvature, -ABS(max_curvature), ABS(max_curvature));
 
         if (get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) >= SOFT_LIMIT_DURATION_US) {
           soft_limit_active = false;
           steering_pressed_prev = false;
         }
       } else {
-        allowed_curvature = CLAMP(desired_curvature, -max_curvature, max_curvature);
+        allowed_curvature = CLAMP(desired_curvature, -ABS(max_curvature), ABS(max_curvature));
       }
     }
   } else {
