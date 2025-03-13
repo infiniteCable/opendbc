@@ -150,8 +150,8 @@ class CarController(CarControllerBase):
           if self.steering_power_last < self.CCP.STEERING_POWER_MIN:  # OP lane assist just activated
             steering_power = min(self.steering_power_last + self.CCP.STEERING_POWER_STEPS, self.CCP.STEERING_POWER_MIN)
           elif CS.out.steeringPressed:  # user action results in decreasing the steering power
-            power_reduction_percent = self.CCP.STEERING_POWER_USER_REDUCTION_ISO if iso_limit_active else self.CCP.STEERING_POWER_USER_REDUCTION # iso works strictly AGAINST user, reduce power further for this case
-            steering_power_user = max(steering_power_target / 100 * (100 - power_reduction_percent), self.CCP.STEERING_POWER_MIN)
+            # iso works strictly AGAINST user, reduce power further for this case
+            steering_power_user = self.CCP.STEERING_POWER_MIN if iso_limit_active else max(steering_power_target / 100 * (100 - self.CCP.STEERING_POWER_USER_REDUCTION), self.CCP.STEERING_POWER_MIN)
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEPS, steering_power_user)
           else: # following desired target
             if self.steering_power_last < steering_power_target:
