@@ -194,7 +194,6 @@ bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limit
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
 bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits);
 bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limits);
-bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled, const AngleSteeringLimits limits);
 void pcm_cruise_check(bool cruise_engaged);
 
 void safety_tick(const safety_config *safety_config);
@@ -226,12 +225,6 @@ extern uint32_t ts_torque_check_last;
 extern uint32_t ts_steer_req_mismatch_last;  // last timestamp steer req was mismatched with torque
 
 extern bool lateral_only_mode;
-
-extern bool soft_limit_active;
-extern uint32_t soft_limit_timer;
-extern float soft_limit_start_curvature;
-extern bool steering_pressed;
-extern bool steering_pressed_prev;
 
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command

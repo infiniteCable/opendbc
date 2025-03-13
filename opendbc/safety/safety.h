@@ -106,12 +106,6 @@ struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 bool lateral_only_mode = false;
 
-bool soft_limit_active = false;
-uint32_t soft_limit_timer = 0;
-float soft_limit_start_curvature = 0.0;
-bool steering_pressed = false;
-bool steering_pressed_prev = false;
-
 int alternative_experience = 0;
 
 // time since safety mode has been changed
@@ -789,29 +783,28 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
 
     // check not above ISO 11270 lateral accel assuming worst case road roll
     if (limits.angle_is_curvature) {
-      violation |= curvature_iso_limit_check(desired_angle, steer_control_enabled, limits);
       // ISO 11270
-      //static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
+      static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
 
       // Limit to average banked road since safety doesn't have the roll
-      //static const float EARTH_G = 9.81;
-      //static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
-      //static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);  // ~2.4 m/s^2
+      static const float EARTH_G = 9.81;
+      static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
+      static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);  // ~2.4 m/s^2
 
       // Allow small tolerance by using minimum speed and rounding curvature up
-      //const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
-      //const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
-      //const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
-      //const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
+      const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
+      const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
+      const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
+      const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
 
       // ensure that the curvature error doesn't try to enforce above this limit
-      //if (desired_angle_last > 0) {
-      //  lowest_desired_angle = CLAMP(lowest_desired_angle, -max_curvature_lower, max_curvature_lower);
-      //  highest_desired_angle = CLAMP(highest_desired_angle, -max_curvature_upper, max_curvature_upper);
-      //} else {
-      //  lowest_desired_angle = CLAMP(lowest_desired_angle, -max_curvature_upper, max_curvature_upper);
-      //  highest_desired_angle = CLAMP(highest_desired_angle, -max_curvature_lower, max_curvature_lower);
-      //}
+      if (desired_angle_last > 0) {
+        lowest_desired_angle = CLAMP(lowest_desired_angle, -max_curvature_lower, max_curvature_lower);
+        highest_desired_angle = CLAMP(highest_desired_angle, -max_curvature_upper, max_curvature_upper);
+      } else {
+        lowest_desired_angle = CLAMP(lowest_desired_angle, -max_curvature_upper, max_curvature_upper);
+        highest_desired_angle = CLAMP(highest_desired_angle, -max_curvature_lower, max_curvature_lower);
+      }
     }
   }
   desired_angle_last = desired_angle;
@@ -828,61 +821,6 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
   violation |= !controls_allowed && steer_control_enabled;
 
   return violation;
-}
-
-bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled, const AngleSteeringLimits limits) {
-  if (!(controls_allowed && steer_control_enabled)) return false;  // Falls keine Kontrolle erlaubt, keine Prüfung nötig
-
-  static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
-  static const float EARTH_G = 9.81;
-  static const float AVERAGE_ROAD_ROLL = 0.06;
-  static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);
-  static const int SOFT_LIMIT_DURATION_US = 2000000;
-
-  const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
-  const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
-	
-  const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
-  const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
-  
-  const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : -max_curvature_lower;
-  const int current_curvature = (desired_curvature >= 0) ? angle_meas.max : angle_meas.min;
-
-  bool iso_limit_exceeded = ABS(desired_curvature) > ABS(max_curvature);
-  int allowed_curvature = desired_curvature;
-
-  if (iso_limit_exceeded) {
-    if (steering_pressed) {
-      allowed_curvature = CLAMP(current_curvature, -ABS(desired_curvature), ABS(desired_curvature));
-      soft_limit_active = false;
-      steering_pressed_prev = true;
-    } else {
-      // Falls vorher Override war und nun nicht mehr -> Soft Limit aktivieren
-      if (steering_pressed_prev) {
-        if (!soft_limit_active) {
-          soft_limit_active = true;
-          soft_limit_timer = microsecond_timer_get();
-          soft_limit_start_curvature = current_curvature;
-        }
-
-        float alpha = MIN(1.0, (float)get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) / SOFT_LIMIT_DURATION_US);
-        allowed_curvature = (1 - alpha) * soft_limit_start_curvature + alpha * CLAMP(desired_curvature, -ABS(max_curvature), ABS(max_curvature));
-
-        if (get_ts_elapsed(soft_limit_timer, microsecond_timer_get()) >= SOFT_LIMIT_DURATION_US) {
-          soft_limit_active = false;
-          steering_pressed_prev = false;
-        }
-      } else {
-        allowed_curvature = CLAMP(desired_curvature, -ABS(max_curvature), ABS(max_curvature));
-      }
-    }
-  } else {
-    // Falls keine Limitüberschreitung mehr -> Soft Limit deaktivieren
-    soft_limit_active = false;
-    steering_pressed_prev = false;
-  }
-
-  return max_limit_check(desired_curvature, MAX(allowed_curvature, -allowed_curvature), MIN(allowed_curvature, -allowed_curvature));
 }
 
 void pcm_cruise_check(bool cruise_engaged) {
