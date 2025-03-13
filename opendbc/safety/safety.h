@@ -845,14 +845,13 @@ bool curvature_iso_limit_check(int desired_curvature, bool steer_control_enabled
   const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
 	
   const int max_curvature = (desired_curvature >= 0) ? max_curvature_upper : max_curvature_lower;
-  const int current_curvature = (desired_curvature >= 0) ? angle_meas.max : angle_meas.min;
+  const int current_curvature = angle_meas.values[0];
 
-  bool iso_limit_exceeded = ABS(desired_curvature) > max_curvature;
+  bool iso_limit_exceeded = (desired_curvature > max_curvature_upper) || (desired_curvature < -max_curvature_lower);
   int allowed_curvature = desired_curvature;
 
   if (iso_limit_exceeded) {
     if (steering_pressed) {
-      // Während Override: Nutze die tatsächliche Krümmung, aber begrenze sie maximal auf `desired_curvature`
       allowed_curvature = CLAMP(current_curvature, -ABS(desired_curvature), ABS(desired_curvature));
       soft_limit_active = false;
       steering_pressed_prev = true;
