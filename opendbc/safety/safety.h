@@ -806,6 +806,9 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
         highest_desired_angle = CLAMP(highest_desired_angle, -max_curvature_lower, max_curvature_lower);
       }
     }
+
+    // check for violation;
+    violation |= max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
   }
   desired_angle_last = desired_angle;
 
