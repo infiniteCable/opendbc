@@ -3,11 +3,13 @@ from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.volkswagen.carcontroller import CarController
 from opendbc.car.volkswagen.carstate import CarState
 from opendbc.car.volkswagen.values import CAR, NetworkLocation, TransmissionType, VolkswagenFlags, VolkswagenSafetyFlags
+from opendbc.car.volkswagen.radar_interface import RadarInterface
 
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState
   CarController = CarController
+  RadarInterface = RadarInterface
 
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:

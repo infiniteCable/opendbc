@@ -47,10 +47,12 @@ class RadarInterface(RadarInterfaceBase):
 
   def _update(self, updated_messages):
     ret = structs.RadarData()
-
-    if self.rcp is None or not self.rcp.can_valid:
-      ret.errors = ["canError"]
+      
+    if self.rcp is None:
       return ret
+
+    if not self.rcp.can_valid:
+      ret.errors.canError = True
 
     msg = self.rcp.vl["MEB_Distance_01"]
 
