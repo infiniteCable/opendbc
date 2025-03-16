@@ -134,7 +134,7 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
+          apply_curvature = self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
           apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, self.CCP) # apply ISO 11270 limit lateral acceleration
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
