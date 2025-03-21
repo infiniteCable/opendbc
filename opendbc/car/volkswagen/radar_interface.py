@@ -76,7 +76,7 @@ class RadarInterface(RadarInterfaceBase):
               "rel_velo": msg[rel_velo]
             }
           else:
-            ret.errors = ["canError"]
+            ret.errors.canError = True
             return ret
             
     for object_id, data in active_objects.items():
