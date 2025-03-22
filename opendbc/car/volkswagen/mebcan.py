@@ -109,6 +109,7 @@ def create_capacitive_wheel_touch(packer, bus, lat_active, klr_stock_values): # 
 
 
 def create_hands_on_wheel_control(packer, bus):
+  # this is used for testing in a non KLR car with coded KLR
   values = {
     "KLR_Touchintensitaet_1": 70, # current touch
     "KLR_Touchintensitaet_2": 50, # lower touch limit
