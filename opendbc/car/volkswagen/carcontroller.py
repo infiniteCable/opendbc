@@ -236,8 +236,8 @@ class CarController(CarControllerBase):
       if self.frame % 6 == 0:
         if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
           can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.ext_bus, CC.enabled, CS.klr_stock_values))
-        else: # this else statement and following CAN command is for personal purposes: non KLR car with coded KLR for testing
-          can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, self.ext_bus))
+        #else: # this else statement and following CAN command is for personal purposes: non KLR car with coded KLR for testing
+        #  can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, self.ext_bus))
 
     # **** Acceleration Controls ******************************************** #
 
