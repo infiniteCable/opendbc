@@ -221,12 +221,18 @@ class CarController(CarControllerBase):
           ea_simulated_torque = CS.out.steeringTorque
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
-    # by jyoung anti EA intervention, send default values
+    # Emergency Assist intervention
     if self.CP.flags & VolkswagenFlags.MEB:
+      # Method 1: send default EA values
+      # by jyoung anti EA intervention, send default values
       if self.frame % 2 == 0:
         can_sends.append(mebcan.create_ea_control(self.packer_pt, CANBUS.pt))
       if self.frame % 50 == 0:
         can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
+
+      # Method 2: send capacitive steering wheel touched
+      if self.frame % 6 == 0:
+        can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, CANBUS.pt, CC.latActive, CS.klr_stock_values))
 
     # **** Acceleration Controls ******************************************** #
 
