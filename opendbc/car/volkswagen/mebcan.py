@@ -18,7 +18,7 @@ ACC_HUD_ENABLED  = 2
 ACC_HUD_DISABLED = 0
 
 
-def create_panda_data(packer, bus, roll))
+def create_panda_data(packer, bus, roll):
   values = {
     "Roll": roll,
   }
