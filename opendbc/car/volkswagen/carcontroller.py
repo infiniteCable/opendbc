@@ -225,10 +225,10 @@ class CarController(CarControllerBase):
     if self.CP.flags & VolkswagenFlags.MEB:
       # Method 1: send default EA values
       # by jyoung anti EA intervention, send default values
-      if self.frame % 2 == 0:
-        can_sends.append(mebcan.create_ea_control(self.packer_pt, CANBUS.pt))
-      if self.frame % 50 == 0:
-        can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
+      #if self.frame % 2 == 0:
+      #  can_sends.append(mebcan.create_ea_control(self.packer_pt, CANBUS.pt))
+      #if self.frame % 50 == 0:
+      #  can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
 
       # Method 2: send capacitive steering wheel touched
       # propably EA could be stock activated only for cars equipped with capacitive steering wheel
