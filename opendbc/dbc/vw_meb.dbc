@@ -37,7 +37,7 @@ BU_: BAP_Tester BedienDisp_vo BedienSG_hi CGS DDA Gateway Gateway_PAG GurtMikrof
 
 
 BO_ 10190564 Panda_Data_01: 8 Vector__XXX
- SG_ Roll : 0|16@1+ (0.0001,0) [-3.14|3.14] "rad" Vector__XXX
+ SG_ Roll : 0|16@1+ (0.0001,-3.1416) [0|6.2832] "rad" Vector__XXX
 
 BO_ 64 Airbag_01: 8 Gateway
  SG_ Airbag_01_CRC : 0|8@1+ (1,0) [0|255] "" AWC,BMC_MLBevo,BMS_NV,DCDC_800V_PAG,DCDC_HV,DCDC_HV_02,DCDC_IHEV,FCU_MLBevo_FCEV,Ladegeraet_2,Ladegeraet_Konzern,Sub_Gateway
