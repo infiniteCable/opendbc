@@ -54,6 +54,9 @@ class CarInterface(CarInterfaceBase):
       if ret.networkLocation == NetworkLocation.gateway:
         ret.radarUnavailable = False
 
+      if 0x25D in fingerprint[0]:  # KLR_01
+        ret.flags |= VolkswagenFlags.STOCK_KLR_PRESENT.value
+
     else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagen)]
