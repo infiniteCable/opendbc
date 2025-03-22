@@ -231,12 +231,12 @@ class CarController(CarControllerBase):
         can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
 
       # Method 2: send capacitive steering wheel touched
-      # propably EA could be activated only for cars equipped with capacitive steering wheel
+      # propably EA could be stock activated only for cars equipped with capacitive steering wheel
       if self.frame % 6 == 0:
         if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
-          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, CANBUS.pt, CC.latActive, CS.klr_stock_values))
+          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.ext_bus, CC.latActive, CS.klr_stock_values))
         else:
-          can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, CANBUS.pt)) # todo enablement via parameter in OP UI, for cars without KLR but has to be coded
+          can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, self.ext_bus)) # todo enablement via parameter in OP UI, for cars without KLR but has to be coded
 
     # **** Acceleration Controls ******************************************** #
 
