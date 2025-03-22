@@ -93,7 +93,7 @@ def create_capacitive_wheel_touch(packer, bus, lat_active, klr_stock_values): # 
   values = {s: klr_stock_values[s] for s in [
     "COUNTER",                     # Sync counter value to output
     "KLR_Touchintensitaet_1",      # current touch
-    "KLR_Touchintensitaet_2",      # lower touch limit -> touch output 7
+    "KLR_Touchintensitaet_2",      # lower touch limit -> touch output 7, below 0
     "KLR_Touchintensitaet_3",      # upper touch limit -> touch output 10
     "KLR_Touchauswertung",         # touch output
   ]}
