@@ -798,8 +798,8 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
       float max_lat_accel, min_lat_accel;
       if (limits.use_roll_data) {
         float roll_comp = roll * EARTH_G;
-        max_lat_accel = ISO_LATERAL_ACCEL + roll_comp;
-        min_lat_accel = -ISO_LATERAL_ACCEL + roll_comp;
+        max_lat_accel = ISO_LATERAL_ACCEL - roll_comp;
+        min_lat_accel = -ISO_LATERAL_ACCEL - roll_comp;
       } else {
         const float static_max_lat = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL); // ~2.4 m/s^2
         max_lat_accel = static_max_lat;
