@@ -795,22 +795,18 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
       static const float EARTH_G = 9.81;
       static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
 
-      float max_lat_accel, min_lat_accel;
+      float max_lat_accel;
       if (limits.use_roll_data) {
-        float roll_comp = roll * EARTH_G;
-        max_lat_accel = ISO_LATERAL_ACCEL - roll_comp;
-        min_lat_accel = -ISO_LATERAL_ACCEL - roll_comp;
+        max_lat_accel = ISO_LATERAL_ACCEL - (roll * EARTH_G); // dynamic roll from OP via CAN
       } else {
-        const float static_max_lat = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL); // ~2.4 m/s^2
-        max_lat_accel = static_max_lat;
-        min_lat_accel = -static_max_lat;
+        max_lat_accel = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL); // ~2.4 m/s^2
       }
 
       // Allow small tolerance by using minimum speed and rounding curvature up
       const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
       const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
       const int max_curvature_upper = (max_lat_accel / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
-      const int max_curvature_lower = (min_lat_accel / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
+      const int max_curvature_lower = (max_lat_accel / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
 
       // ensure that the curvature error doesn't try to enforce above this limit
       if (desired_angle_last > 0) {
