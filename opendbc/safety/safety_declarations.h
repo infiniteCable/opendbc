@@ -97,6 +97,7 @@ typedef struct {
   const bool angle_is_curvature;         // if true, we can apply max lateral acceleration limits
   const bool enforce_angle_error;        // enables max_angle_error check
   const bool inactive_angle_is_zero;     // if false, enforces angle near meas when disabled (default)
+  const bool use_roll_data;              // if true: use roll data from OP, false: use static roll (upstream logic)
 } AngleSteeringLimits;
 
 typedef struct {
@@ -229,6 +230,7 @@ extern uint32_t ts_torque_check_last;
 extern uint32_t ts_steer_req_mismatch_last;  // last timestamp steer req was mismatched with torque
 
 extern bool lateral_only_mode;
+extern float roll;
 
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command
