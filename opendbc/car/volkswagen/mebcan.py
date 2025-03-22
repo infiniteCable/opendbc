@@ -22,7 +22,7 @@ def create_panda_data(packer, bus, roll))
   values = {
     "Roll": roll,
   }
-  return packer.make_can_msg("PANDA_DATA_01", bus, values)
+  return packer.make_can_msg("Panda_Data_01", bus, values)
 
   
 def create_steering_control(packer, bus, apply_curvature, lkas_enabled, power, power_boost):
