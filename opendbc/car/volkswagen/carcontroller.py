@@ -232,8 +232,11 @@ class CarController(CarControllerBase):
 
       # Method 2: send capacitive steering wheel touched
       # propably EA could be activated only for cars equipped with capacitive steering wheel
-      if self.frame % 6 == 0 and self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
-        can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, CANBUS.pt, CC.latActive, CS.klr_stock_values))
+      if self.frame % 6 == 0:
+        if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
+          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, CANBUS.pt, CC.latActive, CS.klr_stock_values))
+        else:
+          can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, CANBUS.pt)) # todo enablement via parameter in OP UI, for cars without KLR but has to be coded
 
     # **** Acceleration Controls ******************************************** #
 
