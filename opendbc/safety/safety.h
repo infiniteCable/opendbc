@@ -105,6 +105,7 @@ int desired_angle_last = 0;
 struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 bool lateral_only_mode = false;
+float roll = 0;
 
 int alternative_experience = 0;
 
@@ -795,11 +796,17 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
       static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
       static const float MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL);  // ~2.4 m/s^2
 
+      if (limits.use_roll_data) {
+        max_lateral_accel = ISO_LATERAL_ACCEL - (EARTH_G * roll);
+      } else {
+        max_lateral_accel = MAX_LATERAL_ACCEL
+      }
+
       // Allow small tolerance by using minimum speed and rounding curvature up
       const float speed_lower = MAX(vehicle_speed.min / VEHICLE_SPEED_FACTOR, 1.0);
       const float speed_upper = MAX(vehicle_speed.max / VEHICLE_SPEED_FACTOR, 1.0);
-      const int max_curvature_upper = (MAX_LATERAL_ACCEL / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
-      const int max_curvature_lower = (MAX_LATERAL_ACCEL / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
+      const int max_curvature_upper = (max_lateral_accel / (speed_lower * speed_lower) * limits.angle_deg_to_can) + 1.;
+      const int max_curvature_lower = (max_lateral_accel / (speed_upper * speed_upper) * limits.angle_deg_to_can) - 1.;
 
       // ensure that the curvature error doesn't try to enforce above this limit
       if (desired_angle_last > 0) {
