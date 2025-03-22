@@ -20,6 +20,7 @@
 #define MSG_EA_01            0x1A4   // TX, for EA mitigation
 #define MSG_EA_02            0x1F0   // TX, for EA mitigation
 #define MSG_KLR_01           0x25D   // TX, for capacitive steering wheel
+#define MSG_Panda_Data_01    0x0616E64   // internal use, data for panda from OP sensors
 
 static uint8_t volkswagen_crc8_lut_8h2f[256]; // Static lookup table for CRC8 poly 0x2F, aka 8H2F/AUTOSAR
 static int volkswagen_steer_power_prev = 0;
@@ -154,6 +155,7 @@ static const AngleSteeringLimits VOLKSWAGEN_MEB_STEERING_LIMITS = {
   //.enforce_angle_error = true, // to allow some difference for our power control handling at the same time
   .angle_is_curvature = true, // our rates are higher than ISO and are useless, ISO is enforced in OP controls and our rates never reached
   .inactive_angle_is_zero = true,
+  .use_roll_data = true,
 };
 
 static void volkswagen_meb_rx_hook(const CANPacket_t *to_push) {
@@ -263,6 +265,12 @@ static bool volkswagen_meb_tx_hook(const CANPacket_t *to_send) {
   
   int addr = GET_ADDR(to_send);
   bool tx = true;
+
+  // PANDA DATA is a custom CAN messages for internal use only, transferring roll from OP for safety checks
+  if (addr == MSG_Panda_Data_01) {
+    roll = (GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8)) * 0.0001 - 3.28;
+    tx = false;
+  }
 
   // Safety check for HCA_03 Heading Control Assist curvature
   if (addr == MSG_HCA_03) {
