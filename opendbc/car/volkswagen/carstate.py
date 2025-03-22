@@ -345,6 +345,8 @@ class CarState(CarStateBase):
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
 
+    self.klr_stock_values = pt_cp.vl["KLR_01"] if CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT else {}
+
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"]) # this is also true for ESC Sport mode
     ret.espActive = bool(pt_cp.vl["ESP_21"]["ESP_Eingriff"])
@@ -514,6 +516,9 @@ class CarState(CarStateBase):
       ("Motor_51", 50),
     ]
 
+    if CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
+      pt_messages += MebExtraSignals.capacitive_steering_wheel_messages
+      
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Radars are here on CANBUS.pt
       pt_messages += MebExtraSignals.fwd_radar_messages
@@ -576,6 +581,9 @@ class MebExtraSignals:
   ]
   bsm_radar_messages = [
     ("MEB_Side_Assist_01", 20),
+  ]
+  capacitive_steering_wheel_messages = [
+    ("KLR_01", 16),
   ]
   main_messages = [
     ("MEB_HVEM_01", 100),
