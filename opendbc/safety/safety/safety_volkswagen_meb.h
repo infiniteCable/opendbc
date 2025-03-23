@@ -20,7 +20,7 @@
 #define MSG_EA_01            0x1A4   // TX, for EA mitigation
 #define MSG_EA_02            0x1F0   // TX, for EA mitigation
 #define MSG_KLR_01           0x25D   // TX, for capacitive steering wheel
-#define MSG_Panda_Data_01    0x0616E64   // internal use, data for panda from OP sensors
+#define MSG_Panda_Data_01    0x50A6EDA   // internal use, data for panda from OP sensors
 
 static uint8_t volkswagen_crc8_lut_8h2f[256]; // Static lookup table for CRC8 poly 0x2F, aka 8H2F/AUTOSAR
 static int volkswagen_steer_power_prev = 0;
