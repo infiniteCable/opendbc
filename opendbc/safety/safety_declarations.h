@@ -230,7 +230,7 @@ extern uint32_t ts_torque_check_last;
 extern uint32_t ts_steer_req_mismatch_last;  // last timestamp steer req was mismatched with torque
 
 extern bool lateral_only_mode;
-extern float roll;
+extern struct sample_t roll; // last 6 roll values
 
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command
