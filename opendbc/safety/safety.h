@@ -105,7 +105,7 @@ int desired_angle_last = 0;
 struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 bool lateral_only_mode = false;
-float roll = 0;
+struct sample_t roll; // last 6 roll values
 
 int alternative_experience = 0;
 
@@ -796,9 +796,11 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
       static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
 
       float max_lat_accel;
-      if (limits.use_roll_data) {
-        max_lat_accel = ISO_LATERAL_ACCEL - (roll * EARTH_G); // dynamic roll from OP via CAN
-      } else {
+      if (limits.use_roll_data) { // dynamic roll from OP via CAN
+	float max_lat_accel_min = ISO_LATERAL_ACCEL - (roll.min * EARTH_G);
+	float max_lat_accel_max = ISO_LATERAL_ACCEL - (roll.max * EARTH_G);
+	max_lat_accel = MAX(max_lat_accel_min, max_lat_accel_max); // allows a little bit of tolerance
+      } else { // OP upstream default, static limit without real roll data
         max_lat_accel = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL); // ~2.4 m/s^2
       }
 
