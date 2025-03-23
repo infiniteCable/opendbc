@@ -461,6 +461,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   reset_sample(&torque_meas);
   reset_sample(&torque_driver);
   reset_sample(&angle_meas);
+  reset_sample(&roll);
 
   controls_allowed = false;
   relay_malfunction_reset();
