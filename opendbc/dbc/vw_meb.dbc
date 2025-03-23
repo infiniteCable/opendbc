@@ -36,7 +36,7 @@ BS_:
 BU_: BAP_Tester BedienDisp_vo BedienSG_hi CGS DDA Gateway Gateway_PAG GurtMikrofon OTA_FC ZR_High ZR_LIMU ZR_MIB_TOP_ab_Gen3 ZR_Standard
 
 
-BO_ 10190564 Panda_Data_01: 8 Vector__XXX
+BO_ 84569818 Panda_Data_01: 32 Vector__XXX
  SG_ Roll : 0|16@1+ (0.0001,-3.1416) [0|6.2832] "rad" Vector__XXX
 
 BO_ 64 Airbag_01: 8 Gateway
