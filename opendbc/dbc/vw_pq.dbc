@@ -1221,6 +1221,28 @@ BO_ 1470 LDW_Status: 8 XXX
  SG_ LDW_Seite_DLCTLC : 37|1@1+ (1,0) [0|1] "" XXX
  SG_ LDW_Frueh_Spaet : 38|2@1+ (1,0) [0|3] "" XXX
 
+BO_ 919 LDW_02: 8 XXX
+ SG_ LDW_Gong : 12|2@1+ (1,0) [0|3] ""  XXX
+ SG_ LDW_SW_Warnung_links : 14|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_SW_Warnung_rechts : 15|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Texte : 16|4@1+ (1,0) [0|15] ""  XXX
+ SG_ LDW_Seite_DLCTLC : 20|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Lernmodus : 21|3@1+ (1,0) [0|7] ""  XXX
+ SG_ LDW_Anlaufsp_VLR : 24|4@1+ (1,0) [0|15] ""  XXX
+ SG_ LDW_Vib_Amp_VLR : 28|4@1+ (1,0) [0|15] ""  XXX
+ SG_ LDW_Anlaufzeit_VLR : 32|4@1+ (1,0) [0|15] ""  XXX
+ SG_ LDW_Lernmodus_rechts : 36|2@1+ (1,0) [0|3] ""  XXX
+ SG_ LDW_Lernmodus_links : 38|2@1+ (1,0) [0|3] ""  XXX
+ SG_ LDW_DLC : 40|8@1+ (0.01,-1.25) [-1.25|1.25] "Unit_Meter"  XXX
+ SG_ LDW_TLC : 48|5@1+ (0.1,0) [0|3] "Unit_Secon"  XXX
+ SG_ LDW_Warnung_links : 56|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Warnung_rechts : 57|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Codierinfo_fuer_VLR : 58|2@1+ (1,0) [0|3] ""  XXX
+ SG_ LDW_Frontscheibenheizung_aktiv : 60|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Status_LED_gelb : 61|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_Status_LED_gruen : 62|1@1+ (1,0) [0|1] ""  XXX
+ SG_ LDW_KD_Fehler : 63|1@1+ (1,0) [0|1] ""  XXX
+
 BO_ 428 Bremse_8: 8 XXX
  SG_ BR8_Checksumme : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ BR8_Zaehler : 8|4@1+ (1,0) [0|15] "" XXX
