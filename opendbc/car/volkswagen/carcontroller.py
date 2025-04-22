@@ -2,7 +2,6 @@ import math
 import numpy as np
 from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
-from opendbc.car.common.pt2 import PT2Filter
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan, mebcan
@@ -132,7 +131,6 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
-    self.smooth_curv = PT2Filter(46.0, 1.0, self.CCP.STEER_STEP * DT_CTRL) # effectivly adds a small delay, compensate with steering actuator delay)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -157,8 +155,7 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          apply_curvature = self.smooth_curv.update(actuator_curvature_with_offset) # reduce wear, better comfort and car stability without reducing steering ability
-          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits_roll(apply_curvature, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, CC.rollDEPRECATED, self.CCP) # apply ISO 11270 limit lateral acceleration
+          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits_roll(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, CC.rollDEPRECATED, self.CCP) # apply ISO 11270 limit lateral acceleration
           if CS.out.steeringPressed: # roughly sync curvature when user overrides
             apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
           apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
