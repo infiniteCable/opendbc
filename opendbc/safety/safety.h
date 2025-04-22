@@ -104,7 +104,6 @@ uint32_t ts_angle_last = 0;
 int desired_angle_last = 0;
 struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
-bool lateral_only_mode = false;
 struct sample_t roll; // last 6 roll values
 
 int alternative_experience = 0;
@@ -370,11 +369,7 @@ static void generic_rx_checks(bool stock_ecu_detected) {
 
   // exit controls on rising edge of brake press
   if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-    if (alternative_experience & ALT_EXP_DONT_DISENGAGE_LAT_ON_BRAKE) {
-      lateral_only_mode = true;
-    } else {
-      controls_allowed = false;
-    }
+    controls_allowed = false;
   }
   brake_pressed_prev = brake_pressed;
 
@@ -618,10 +613,6 @@ int ROUND(float val) {
 
 // Safety checks for longitudinal actuation
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits) {
-  if (lateral_only_mode) {
-    return desired_accel == limits.inactive_accel;
-  }
-	
   bool accel_valid = get_longitudinal_allowed() && !max_limit_check(desired_accel, limits.max_accel, limits.min_accel);
   bool accel_inactive = desired_accel == limits.inactive_accel;
   return !(accel_valid || accel_inactive);
@@ -799,16 +790,24 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
     if (limits.angle_is_curvature) {
       // ISO 11270
       static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
-
-      // Limit to average banked road since safety doesn't have the roll
       static const float EARTH_G = 9.81;
       static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
-
+      
       float max_lat_accel;
       if (limits.use_roll_data) { // dynamic roll from OP via CAN
-	float max_lat_accel_min = ISO_LATERAL_ACCEL - (roll.min * EARTH_G);
-	float max_lat_accel_max = ISO_LATERAL_ACCEL - (roll.max * EARTH_G);
-	max_lat_accel = MAX(max_lat_accel_min, max_lat_accel_max); // allows a little bit of tolerance
+	float roll_comp_left  = MAX(roll.max, 0.0);
+    	float roll_comp_right = MIN(roll.min, 0.0);
+
+    	float limit_left  = ISO_LATERAL_ACCEL + (roll_comp_left  * EARTH_G);
+    	float limit_right = ISO_LATERAL_ACCEL + (-roll_comp_right * EARTH_G);
+
+    	if (desired_angle_last > 0) {
+      	  max_lat_accel = limit_right;
+    	} else if (desired_angle_last < 0) {
+      	  max_lat_accel = limit_left;
+    	} else {
+      	  max_lat_accel = ISO_LATERAL_ACCEL;
+    	}
       } else { // OP upstream default, static limit without real roll data
         max_lat_accel = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL); // ~2.4 m/s^2
       }
@@ -850,18 +849,10 @@ bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const
 
 void pcm_cruise_check(bool cruise_engaged) {
   if (!cruise_engaged) {
-    if (!lateral_only_mode) {  
-      controls_allowed = false;
-    }
+    controls_allowed = false;
   }
-
   if (cruise_engaged && !cruise_engaged_prev) {
     controls_allowed = true;
-
-    if (!lateral_only_mode) {
-      lateral_only_mode = false;
-    }
   }
-
   cruise_engaged_prev = cruise_engaged;
 }
