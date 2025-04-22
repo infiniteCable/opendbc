@@ -44,7 +44,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMeb)]
       ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
       ret.transmissionType = TransmissionType.direct
-      ret.steerControlType = structs.CarParams.SteerControlType.curvatureDEPRECATED
+      ret.steerControlType = structs.CarParams.SteerControlType.angle
       ret.steerAtStandstill = False # steering at standstill works for MEB but is troublesome
 
       if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, QFK_01
@@ -118,5 +118,11 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.1
     ret.vEgoStopping = 0.5
     ret.autoResumeSng = ret.minEnableSpeed == -1
+
+    if ret.flags & VolkswagenFlags.MEB:
+      ret.stopAccel = -1.1
+      ret.stoppingDecelRate = 0.05
+    else:
+       ret.stopAccel = -0.55
 
     return ret
