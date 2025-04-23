@@ -7,8 +7,19 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.volkswagen.values import DBC, VolkswagenFlags
 
 RADAR_ADDR = 0x24F
-NO_OBJECT  = 0
-LANE_TYPES = ['Same_Lane', 'Left_Lane', 'Right_Lane']
+NO_OBJECT = 0
+LANE_TYPES = ("Same_Lane", "Left_Lane", "Right_Lane")
+SIGNAL_SETS = tuple(
+  (
+    f"{prefix}_ObjectID",
+    f"{prefix}_Long_Distance",
+    f"{prefix}_Lat_Distance",
+    f"{prefix}_Rel_Velo",
+  )
+  for lane in LANE_TYPES
+  for idx in (1, 2)
+  for prefix in (f"{lane}_0{idx}",)
+)
 
 
 def get_radar_can_parser(CP):
@@ -18,20 +29,24 @@ def get_radar_can_parser(CP):
     return None
 
   return CANParser(DBC[CP.carFingerprint][Bus.radar], messages, 2)
-  
+
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.updated_messages = set()
-    self.trigger_msg = RADAR_ADDR
-    self.track_id = 0
 
-    self.radar_off_can = CP.radarUnavailable
-    self.rcp = get_radar_can_parser(CP)
+    self.updated_messages: set[int] = set()
+    self.trigger_msg: int = RADAR_ADDR
+    self._track_id_counter: int = 0
+
+    self.radar_off_can: bool = CP.radarUnavailable
+    self.rcp: CANParser | None = get_radar_can_parser(CP)
+
+    self._pts = self.pts
 
   def update(self, can_strings):
-    if self.radar_off_can or (self.rcp is None):
+    """Entry‑point called by the vehicle loop every CAN tick."""
+    if self.radar_off_can or self.rcp is None:
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
@@ -40,62 +55,58 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    rr = self._update(self.updated_messages)
+    radar_data = self._process_radar_frame()
     self.updated_messages.clear()
+    return radar_data
 
-    return rr
-
-  def _update(self, updated_messages):
+  def _process_radar_frame(self):
     ret = structs.RadarData()
-      
+
     if self.rcp is None:
       return ret
 
     if not self.rcp.can_valid:
       ret.errors.canError = True
+      return ret
 
     msg = self.rcp.vl["MEB_Distance_01"]
+    get = msg.__getitem__
 
-    active_objects = {}
+    active_objects: dict[int, tuple[float, float, float]] = {}
+    for obj_id_sig, long_sig, lat_sig, vel_sig in SIGNAL_SETS:
+      obj_id = get(obj_id_sig)
+      if obj_id == NO_OBJECT:
+        continue
 
-    for lane_type in LANE_TYPES:
-      for idx in range(1, 3):
-        signal_part = f'{lane_type}_0{idx}'
-        long_distance = f'{signal_part}_Long_Distance'
-        object_id = f'{signal_part}_ObjectID'
-        lat_distance = f'{signal_part}_Lat_Distance'
-        rel_velo = f'{signal_part}_Rel_Velo'
+      if obj_id in active_objects:
+        ret.errors.canError = True
+        return ret
 
-        current_object_id = msg[object_id]
+      active_objects[obj_id] = (
+        get(long_sig),  # dRel
+        get(lat_sig),   # yRel
+        get(vel_sig),   # vRel
+      )
 
-        if current_object_id != NO_OBJECT:
-          if current_object_id not in active_objects:
-            active_objects[current_object_id] = {
-              "long_distance": msg[long_distance],
-              "lat_distance": msg[lat_distance],
-              "rel_velo": msg[rel_velo]
-            }
-          else:
-            ret.errors.canError = True
-            return ret
-            
-    for object_id, data in active_objects.items():
-      if object_id not in self.pts:
-        self.pts[object_id] = structs.RadarData.RadarPoint()
-        self.pts[object_id].trackId = self.track_id
-        self.track_id += 1
+    for obj_id, (d_rel, y_rel, v_rel) in active_objects.items():
+      if obj_id not in self._pts:
+        pt = structs.RadarData.RadarPoint()
+        pt.trackId = self._track_id_counter
+        self._track_id_counter += 1
+        self._pts[obj_id] = pt
+      else:
+        pt = self._pts[obj_id]
 
-      self.pts[object_id].measured = True
-      self.pts[object_id].dRel = data["long_distance"]
-      self.pts[object_id].yRel = data["lat_distance"]
-      self.pts[object_id].vRel = data["rel_velo"]
-      self.pts[object_id].aRel = float('nan')
-      self.pts[object_id].yvRel = float('nan')
+      pt.measured = True
+      pt.dRel = d_rel
+      pt.yRel = y_rel
+      pt.vRel = v_rel
+      pt.aRel = math.nan
+      pt.yvRel = math.nan
 
-    tracked_ids = set(self.pts.keys())
-    active_ids = set(active_objects.keys())
-    for object_id in tracked_ids - active_ids:
-      self.pts.pop(object_id, None)
+    inactive_ids = self._pts.keys() - active_objects.keys()
+    for obj_id in inactive_ids:
+      self._pts.pop(obj_id, None)
 
-    ret.points = list(self.pts.values())
+    ret.points = list(self._pts.values())
     return ret
