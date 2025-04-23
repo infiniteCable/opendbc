@@ -1,47 +1,23 @@
-import math
 import numpy as np
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
+from opendbc.car import Bus, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
+from opendbc.car import DT_CTRL, ACCELERATION_DUE_TO_GRAVITY, ISO_LATERAL_ACCEL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
-from opendbc.car.volkswagen import mqbcan, pqcan, mebcan
+from opendbc.car.volkswagen import mqbcan, pqcan, mebcan, pandacan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
-
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
-# ISO 11270
-ISO_LATERAL_ACCEL = 3.0  # m/s^2  # TODO: import from test lateral limits file?
 
-# Limit to average banked road since safety doesn't have the roll
-EARTH_G = 9.81
-AVERAGE_ROAD_ROLL = 0.06  # ~3.4 degrees, 6% superelevation
-MAX_LATERAL_ACCEL = ISO_LATERAL_ACCEL - (EARTH_G * AVERAGE_ROAD_ROLL)  # ~2.4 m/s^2
-
-
-# this should be a dedicated tool method, but also is redundant because ISO 11270 is enforced in controls, for VW MEB rate limiting does not make sense
-def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CCP):
-  # Curvature rate limit (this is more than ISO 11270 below would allow right now, restiance is futile, comply)
-  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CCP.ANGLE_LIMITS)
-
-  # ISO 11270
-  # Safety is not aware of the road roll so we subtract a conservative amount at all times
-  # Limit curvature to conservative max lateral acceleration
-  curvature_accel_limit = MAX_LATERAL_ACCEL / (max(v_ego_raw, 1) ** 2)
-  iso_limit_active = True if abs(curvature_accel_limit) < abs(apply_curvature) else False
-  apply_curvature = float(np.clip(apply_curvature, -curvature_accel_limit, curvature_accel_limit))
-
-  return apply_curvature, iso_limit_active
-
-
-def apply_vw_meb_curvature_limits_roll(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, roll, CCP):
+def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, roll, CCP):
   # Curvature rate limit (this is more than ISO 11270 below would allow)
   apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CCP.ANGLE_LIMITS)
 
   # ISO 11270
   # roll is passed to panda via custom Panda Data CAN message for internal usage only (not sent to car)
-  roll_compensation = roll * EARTH_G
+  roll_compensation = roll * ACCELERATION_DUE_TO_GRAVITY 
   max_lat_accel = ISO_LATERAL_ACCEL + roll_compensation
   min_lat_accel = -ISO_LATERAL_ACCEL + roll_compensation
   max_curvature = max_lat_accel / (max(v_ego_raw, 1.0) ** 2)
@@ -105,21 +81,17 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_names, CP):
-    super().__init__(dbc_names, CP)
+  def __init__(self, dbc_names, CP, CP_SP):
+    super().__init__(dbc_names, CP, CP_SP)
     self.CCP = CarControllerParams(CP)
-    if CP.flags & VolkswagenFlags.PQ:
-      self.CCS = pqcan
-    elif CP.flags & VolkswagenFlags.MEB:
-      self.CCS = mebcan
-    else:
-      self.CCS = mqbcan
+    self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else (mebcan if CP.flags & VolkswagenFlags.MEB else mqbcan)
+    self.PC = pandacan
     self.packer_pt = CANPacker(dbc_names[Bus.pt])
     self.ext_bus = CANBUS.pt if CP.networkLocation == structs.CarParams.NetworkLocation.fwdCamera else CANBUS.cam
     self.aeb_available = not CP.flags & VolkswagenFlags.PQ
 
     self.apply_torque_last = 0
-    self.apply_curvature_last = 0
+    self.apply_curvature_last = 0.
     self.steering_power_last = 0
     self.accel_last = 0
     self.long_jerk_last = 0
@@ -131,8 +103,10 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.gra_up = False
+    self.gra_down = False
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
@@ -140,7 +114,7 @@ class CarController(CarControllerBase):
     # **** DATA FOR PANDA VIA CAN ************************************************ #
     if self.frame % self.CCP.STEER_STEP == 0:
       if self.CP.flags & VolkswagenFlags.MEB:
-        can_sends.append(self.CCS.create_panda_data(self.packer_pt, CANBUS.pt, CC.rollDEPRECATED))
+        can_sends.append(self.PC.create_panda_data(self.packer_pt, CANBUS.pt, CC.rollDEPRECATED))
 
     # **** Steering Controls ************************************************ #
 
@@ -155,9 +129,9 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits_roll(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, CC.rollDEPRECATED, self.CCP) # apply ISO 11270 limit lateral acceleration
-          if CS.out.steeringPressed: # roughly sync curvature when user overrides
-            apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
+          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, CC.rollDEPRECATED, self.CCP) # apply ISO 11270 limit lateral acceleration
+          #if CS.out.steeringPressed: # roughly sync curvature when user overrides
+          #  apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
           apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
 
           steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
@@ -258,48 +232,55 @@ class CarController(CarControllerBase):
           can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.ext_bus, CC.enabled, CS.klr_stock_values))
         #else: # this else statement and following CAN command is for personal purposes: non KLR car with coded KLR for testing
         #  can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, self.ext_bus))
-
+    
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      stopping = actuators.longControlState == LongCtrlState.stopping
-      starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
-
-      if self.CP.flags & VolkswagenFlags.MEB:
-        # Logic to prevent car error with EPB:
-        #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override
-        #   * send a few frames of HMS RAMP RELEASE command right at the end of active long control
-        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0)
-
-        # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
-        long_override = CC.cruiseControl.override or CS.out.gasPressed
-        self.long_override_counter = min(self.long_override_counter + 1, 5) if long_override else 0
-        long_override_begin = long_override and self.long_override_counter < 5
-
-        # 1 frame of long_disabling is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
-        self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
-        long_disabling = not CC.enabled and self.long_disabled_counter < 5
-
-        upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance) if CC.enabled else (0, 0)
-        upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override) if CC.enabled else (0, 0, 0)
-        
-        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
-                                                 CS.esp_hold_confirmation, long_override)          
-        acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
-                                               CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
-                                                           upper_jerk, lower_jerk, upper_control_limit, lower_control_limit,
-                                                           accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
-                                                           long_override, CS.travel_assist_available))
-        self.accel_last = accel
+      if CS.acc_type == 3 and self.CP.flags & VolkswagenFlags.PQ:
+        gra_enabled = CC.longActive and CS.out.cruiseState.enabled
+        set_speed = int(round(CS.out.cruiseState.speed * CV.MS_TO_KPH))
+        actuator_speed = int(round(actuators.speed * CV.MS_TO_KPH))
+        self.gra_up = True if set_speed < actuator_speed and gra_enabled else False
+        self.gra_down = True if set_speed > actuator_speed and gra_enabled else False
 
       else:
-        accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
-        self.accel_last = accel
+        stopping = actuators.longControlState == LongCtrlState.stopping
+        starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
         
-        acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
-        can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
-                                                           acc_control, stopping, starting, CS.esp_hold_confirmation))
+        if self.CP.flags & VolkswagenFlags.MEB:
+          # Logic to prevent car error with EPB:
+          #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override and right at the end of active long control
+          accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0)
+
+          # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
+          long_override = CC.cruiseControl.override or CS.out.gasPressed
+          self.long_override_counter = min(self.long_override_counter + 1, 5) if long_override else 0
+          long_override_begin = long_override and self.long_override_counter < 5
+
+          # 1 frame of long_disabling is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
+          self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
+          long_disabling = not CC.enabled and self.long_disabled_counter < 5
+
+          upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance) if CC.enabled else (0, 0)
+          upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override) if CC.enabled else (0, 0, 0)
+        
+          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
+                                                   CS.esp_hold_confirmation, long_override)          
+          acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
+                                                 CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
+          can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
+                                                             upper_jerk, lower_jerk, upper_control_limit, lower_control_limit,
+                                                             accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
+                                                             long_override, CS.travel_assist_available))
+          self.accel_last = accel
+
+        else:
+          accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
+          self.accel_last = accel
+        
+          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
+          can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
+                                                             acc_control, stopping, starting, CS.esp_hold_confirmation))
 
       #if self.aeb_available:
       #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
@@ -311,12 +292,11 @@ class CarController(CarControllerBase):
 
     if self.frame % self.CCP.LDW_STEP == 0:
       hud_alert = 0
-      
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
-        hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOverUrgent"]
-        
+        hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
+
       if self.CP.flags & VolkswagenFlags.MEB:
-        sound_alert = self.CCP.LDW_SOUNDS["Beep"] if hud_alert == self.CCP.LDW_MESSAGES["laneAssistTakeOverUrgent"] else self.CCP.LDW_SOUNDS["None"]
+        sound_alert = self.CCP.LDW_SOUNDS["Beep"] if hud_alert == self.CCP.LDW_MESSAGES["laneAssistTakeOver"] else self.CCP.LDW_SOUNDS["None"]
         can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.latActive,
                                                          CS.out.steeringPressed, hud_alert, hud_control, sound_alert))
       else:
@@ -325,7 +305,7 @@ class CarController(CarControllerBase):
 
     if hud_control.leadDistanceBars != self.lead_distance_bars_last:
       self.distance_bar_frame = self.frame
-
+    
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if self.CP.flags & VolkswagenFlags.MEB:
         fcw_alert = True if hud_control.visualAlert == VisualAlert.fcw else False
@@ -349,16 +329,24 @@ class CarController(CarControllerBase):
                                                          lead_distance, hud_control.leadDistanceBars))
 
     # **** Stock ACC Button Controls **************************************** #
-    gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
-    if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
-      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
-                                                           cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+
+    gra_send_ready = CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
+    if gra_send_ready:
+      if self.CP.pcmCruise and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
+        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
+                                                             cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
+      elif self.CP.openpilotLongitudinalControl and (self.gra_up or self.gra_down):
+        can_sends.append(self.CCS.create_gra_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
+                                                             up=self.gra_up, down=self.gra_down))
+        self.gra_up = False
+        self.gra_down = False
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = self.apply_torque_last / self.CCP.STEER_MAX
     new_actuators.torqueOutputCan = self.apply_torque_last
     new_actuators.curvature = float(self.apply_curvature_last)
     new_actuators.accel = self.accel_last
+    new_actuators.speed = actuators.speed
 
     self.lead_distance_bars_last = hud_control.leadDistanceBars
     self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
