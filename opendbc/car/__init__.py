@@ -14,6 +14,7 @@ DT_CTRL = 0.01  # car state and control loop timestep (s)
 STD_CARGO_KG = 136.
 
 ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
+ISO_LATERAL_ACCEL = 3.0 # ISO 11270
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
