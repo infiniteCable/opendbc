@@ -81,8 +81,8 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_names, CP, CP_SP):
-    super().__init__(dbc_names, CP, CP_SP)
+  def __init__(self, dbc_names, CP:
+    super().__init__(dbc_names, CP)
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else (mebcan if CP.flags & VolkswagenFlags.MEB else mqbcan)
     self.PC = pandacan
@@ -106,7 +106,7 @@ class CarController(CarControllerBase):
     self.gra_up = False
     self.gra_down = False
 
-  def update(self, CC, CC_SP, CS, now_nanos):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
