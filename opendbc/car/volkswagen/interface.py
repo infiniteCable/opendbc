@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
       ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
       ret.transmissionType = TransmissionType.direct
       ret.steerControlType = structs.CarParams.SteerControlType.angle
-      ret.steerAtStandstill = False # steering at standstill works for MEB but is troublesome
+      ret.steerAtStandstill = True
 
       if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, QFK_01
         ret.networkLocation = NetworkLocation.gateway
