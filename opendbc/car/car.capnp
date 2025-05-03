@@ -238,7 +238,7 @@ struct CarState {
   cumLagMs @50 :Float32;
 
   # battery data
-  batteryDetails @58 :BatteryDetails;
+  batteryDetails @59 :BatteryDetails;
 
   struct BatteryDetails {
     capacity @0 :Float32;
