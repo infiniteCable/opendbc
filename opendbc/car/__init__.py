@@ -3,6 +3,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from enum import IntFlag, ReprEnum, StrEnum, EnumType, auto
 from dataclasses import replace
+from typing import Tuple
 
 from opendbc.car import structs, uds
 from opendbc.car.can_definitions import CanData
@@ -15,6 +16,7 @@ STD_CARGO_KG = 136.
 
 ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
 ISO_LATERAL_ACCEL = 3.0 # ISO 11270
+ISO_LATERAL_JERK = 5.0 # ISO 11270
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
@@ -24,6 +26,10 @@ class AngleSteeringLimits:
   STEER_ANGLE_MAX: float
   ANGLE_RATE_LIMIT_UP: tuple[list[float], list[float]]
   ANGLE_RATE_LIMIT_DOWN: tuple[list[float], list[float]]
+
+@dataclass
+class CurvatureSteeringLimits:
+  CURVATURE_MAX: float
 
 
 def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
@@ -164,6 +170,38 @@ def apply_std_steer_angle_limits(apply_angle: float, apply_angle_last: float, v_
     new_apply_angle = steering_angle
 
   return float(np.clip(new_apply_angle, -limits.STEER_ANGLE_MAX, limits.STEER_ANGLE_MAX))
+
+
+def apply_std_curvature_limits(apply_curvature: float, apply_curvature_last: float, v_ego: float, roll: float, curvature: float,
+                               steer_step: int, lat_active: bool, limits: CurvatureSteeringLimits) -> Tuple[float, bool]:
+
+  new_apply_curvature = apply_curvature
+
+  # ISO 11270
+  # Lateral jerk
+  ts_elapsed = steer_step * DT_CTRL
+  curvature_rate_limit = ISO_LATERAL_JERK / (max(v_ego, 1.0) ** 2)
+  curvature_up = apply_curvature_last + curvature_rate_limit * ts_elapsed
+  curvature_down  = apply_curvature_last - curvature_rate_limit * ts_elapsed
+
+  new_apply_curvature = float(np.clip(new_apply_curvature, curvature_down, curvature_up))
+
+  # Lateral acceleration
+  # roll is passed to panda via custom Panda Data CAN message for internal usage only (not sent to car)
+  max_lat_accel = ISO_LATERAL_ACCEL - (roll * ACCELERATION_DUE_TO_GRAVITY)
+  min_lat_accel = -ISO_LATERAL_ACCEL - (roll * ACCELERATION_DUE_TO_GRAVITY)
+  max_curvature = max_lat_accel / (max(v_ego, 1.0) ** 2)
+  min_curvature = min_lat_accel / (max(v_ego, 1.0) ** 2)
+
+  new_apply_curvature = float(np.clip(new_apply_curvature, min_curvature, max_curvature))
+
+  # set output curvature as current curvature (if otherwise set to 0 in car controller)
+  if not lat_active:
+    new_apply_curvature = curvature
+
+  iso_limit_active = not (min_curvature <= new_apply_curvature <= max_curvature)
+
+  return float(np.clip(new_apply_curvature, -limits.CURVATURE_MAX, limits.CURVATURE_MAX)), iso_limit_active
 
 
 def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_frames: int,
