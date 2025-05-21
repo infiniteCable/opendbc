@@ -238,7 +238,7 @@ struct CarState {
   cumLagMs @50 :Float32;
 
   # battery data
-  batteryDetails @59 :BatteryDetails;
+  batteryDetails @60 :BatteryDetails;
 
   struct BatteryDetails {
     capacity @0 :Float32;
@@ -267,6 +267,7 @@ struct CarState {
     speedOffset @3 :Float32;
     standstill @4 :Bool;
     nonAdaptive @5 :Bool;
+    speedLimit @7 :Float32;
   }
 
   enum GearShifter {
@@ -404,6 +405,7 @@ struct CarControl {
     cancel @0: Bool;
     resume @1: Bool;
     override @4: Bool;
+    speedLimit @5: Bool;
     speedOverrideDEPRECATED @2: Float32;
     accelOverrideDEPRECATED @3: Float32;
   }
