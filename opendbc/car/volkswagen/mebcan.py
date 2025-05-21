@@ -1,5 +1,3 @@
-from opendbc.car.common.conversions import Conversions as CV
-
 ACC_CTRL_ERROR    = 6
 ACC_CTRL_OVERRIDE = 4
 ACC_CTRL_ACTIVE   = 3
@@ -16,13 +14,6 @@ ACC_HUD_OVERRIDE = 4
 ACC_HUD_ACTIVE   = 3
 ACC_HUD_ENABLED  = 2
 ACC_HUD_DISABLED = 0
-
-
-def create_panda_data(packer, bus, roll):
-  values = {
-    "Roll": roll,
-  }
-  return packer.make_can_msg("Panda_Data_01", bus, values)
 
   
 def create_steering_control(packer, bus, apply_curvature, lkas_enabled, power, power_boost):
@@ -53,6 +44,28 @@ def create_eps_update(packer, bus, eps_stock_values, ea_simulated_torque):
   })
 
   return packer.make_can_msg("LH_EPS_03", bus, values)
+
+
+def create_blinker_control(packer, bus, ea_hud_stock_values, left_blinker, right_blinker):
+  values = {s: ea_hud_stock_values[s] for s in [
+    "EA_Texte",
+    "ACF_Lampe_Hands_Off",
+    "EA_Infotainment_Anf",
+    "EA_Tueren_Anf",
+    "EA_Innenraumlicht_Anf",
+    "zFAS_Warnblinken",
+    "STP_Primaeranz",
+    "EA_Bremslichtblinken",
+    "EA_Blinken",
+    "EA_Unknown",
+  ]}
+
+  if ea_hud_stock_values["EA_Blinken"] == 0:
+    values.update({
+      "EA_Blinken": 1 if left_blinker else (2 if right_blinker else ea_hud_stock_values["EA_Blinken"]),
+    })
+
+  return packer.make_can_msg("EA_02", bus, values)
 
 
 def create_lka_hud_control(packer, bus, ldw_stock_values, lat_active, steering_pressed, hud_alert, hud_control, sound_alert):
@@ -111,18 +124,6 @@ def create_capacitive_wheel_touch(packer, bus, lat_active, klr_stock_values): # 
       "KLR_Touchintensitaet_1": klr_stock_values["KLR_Touchintensitaet_3"] + 1, # current touch one increment over upper limit
       "KLR_Touchauswertung": 10, # 10 emulates touch output over upper limit
     })
-
-  return packer.make_can_msg("KLR_01", bus, values)
-
-
-def create_hands_on_wheel_control(packer, bus):
-  # this is used for testing in a non KLR car with coded KLR
-  values = {
-    "KLR_Touchintensitaet_1": 70, # current touch
-    "KLR_Touchintensitaet_2": 50, # lower touch limit
-    "KLR_Touchintensitaet_3": 60, # upper touch limit
-    "KLR_Touchauswertung":    10, # touch output
-  }
 
   return packer.make_can_msg("KLR_01", bus, values)
   
