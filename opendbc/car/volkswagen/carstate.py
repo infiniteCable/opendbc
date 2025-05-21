@@ -538,6 +538,9 @@ class CarState(CarStateBase):
       ("SAM_01", 5),
       ("Motor_51", 50),
     ]
+
+    if CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
+      pt_messages += MebExtraSignals.capacitive_steering_wheel_messages
       
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Radars are here on CANBUS.pt
@@ -614,6 +617,9 @@ class MebExtraSignals:
     ("MEB_HVEM_03", 2),
     ("BMS_04", 2),
     ("DCDC_03", 2),
+  ]
+  capacitive_steering_wheel_messages = [
+    ("KLR_01", 16),
   ]
   psd_messages = [
     ("PSD_04", 7),
