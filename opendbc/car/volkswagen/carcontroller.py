@@ -62,7 +62,7 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_names, CP:
+  def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else (mebcan if CP.flags & VolkswagenFlags.MEB else mqbcan)
