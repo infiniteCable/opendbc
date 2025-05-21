@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
 from opendbc.can.can_define import CANDefine
-from opendbc.car import AngleSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car import CurvatureSteeringLimits, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
@@ -81,13 +81,10 @@ class CarControllerParams:
       self.STEERING_POWER_MIN                = 40    # HCA_03 minimum steering power
       self.STEERING_POWER_STEPS              = 6     # HCA_03 steering power counter steps
       self.STEERING_POWER_MAX_BY_SPEED       = 20    # HCA_03 speed in m/s^2 where maximum steering power is reached
-      self.CURVATURE_ERROR                   = 0.01  # HCA_03 angle error
       self.CURVATURE_POWER_FACTOR            = 4000
       
-      self.ANGLE_LIMITS: AngleSteeringLimits = AngleSteeringLimits(
+      self.CURVATURE_LIMITS: CurvatureSteeringLimits = CurvatureSteeringLimits(
         0.195,  # Max curvature for steering command, m^-1
-        ([5, 25], [0.0015, 0.00015]), # curvature safety limit up
-        ([5, 25], [0.002, 0.00035]) # curvature safety limit down
       )
 
       self.shifter_values    = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
@@ -184,6 +181,7 @@ class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
   STOCK_KLR_PRESENT = 8
+  STOCK_PSD_PRESENT = 16
 
   # Static flags
   PQ = 2
@@ -306,7 +304,7 @@ class CAR(Platforms):
       VWCarDocs("Volkswagen Caddy 2019"),
       VWCarDocs("Volkswagen Caddy Maxi 2019"),
     ],
-    VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1550, wheelbase=2.682, steerRatio=15.5, centerToFrontRatio=0.505, tireStiffnessFactor=1.1),
     chassis_codes={"2K"},
     wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
   )
@@ -466,7 +464,7 @@ class CAR(Platforms):
       VWCarDocs("CUPRA Born 2021"),
     ],
     # for CUPRA BORN 77kWh 170 kW, tireStiffnessFactor and centerToFrontRatio are approximations
-    VolkswagenCarSpecs(mass=1950, wheelbase=2.766, steerRatio=15.9, centerToFrontRatio=0.496),
+    VolkswagenCarSpecs(mass=1950, wheelbase=2.766, steerRatio=15.9, centerToFrontRatio=0.496, tireStiffnessFactor=1.0),
     chassis_codes={"K1"},
     wmis={WMI.SEAT},
   )
