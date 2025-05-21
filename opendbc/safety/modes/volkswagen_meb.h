@@ -1,7 +1,7 @@
 #pragma once
 
-#include "safety_declarations.h"
-#include "safety_volkswagen_common.h"
+#include "opendbc/safety/safety_declarations.h"
+#include "opendbc/safety/modes/volkswagen_common.h"
 
 #define MSG_ESC_51           0xFC    // RX, for wheel speeds
 #define MSG_Motor_54         0x14C   // RX, for accel pedal
