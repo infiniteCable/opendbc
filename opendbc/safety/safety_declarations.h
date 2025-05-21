@@ -135,6 +135,15 @@ typedef struct {
 } AngleSteeringLimits;
 
 typedef struct {
+  // curvature cmd limits
+  const int max_curvature;
+  const float curvature_to_can;
+  const float send_rate;
+  const bool inactive_curvature_is_zero; // if false, enforces angle near meas when disabled (default)
+  const float roll_to_can;
+} CurvatureSteeringLimits;
+
+typedef struct {
   // acceleration cmd limits
   const int max_accel;
   const int min_accel;
@@ -226,6 +235,7 @@ void gen_crc_lookup_table_16(uint16_t poly, uint16_t crc_lut[]);
 #endif
 bool steer_torque_cmd_checks(int desired_torque, int steer_req, const TorqueSteeringLimits limits);
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits);
+bool steer_curvature_cmd_checks(int desired_curvature, int desired_steer_power, bool steer_control_enabled, const CurvatureSteeringLimits limits);
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits);
 bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limits);
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
@@ -263,7 +273,10 @@ extern struct sample_t torque_driver;     // last 6 driver torques measured
 extern uint32_t ts_torque_check_last;
 extern uint32_t ts_steer_req_mismatch_last;  // last timestamp steer req was mismatched with torque
 
-extern struct sample_t roll; // last 6 roll values
+extern struct sample_t curvature_meas;     // last 6 curvatures
+extern struct sample_t roll;               // last 6 roll values
+extern int desired_curvature_last;
+extern int desired_steer_power_last;
 
 // state for controls_allowed timeout logic
 extern bool heartbeat_engaged;             // openpilot enabled, passed in heartbeat USB command
