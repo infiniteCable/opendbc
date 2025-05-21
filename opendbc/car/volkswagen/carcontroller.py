@@ -1,7 +1,6 @@
 import numpy as np
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, apply_driver_steer_torque_limits, apply_std_steer_angle_limits, structs
-from opendbc.car import DT_CTRL, ACCELERATION_DUE_TO_GRAVITY, ISO_LATERAL_ACCEL
+from opendbc.car import Bus, apply_driver_steer_torque_limits, apply_std_curvature_limits, structs, DT_CTRL
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan, mebcan, pandacan
@@ -9,24 +8,6 @@ from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, Volkswage
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
-
-
-def apply_vw_meb_curvature_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, roll, CCP):
-  # Curvature rate limit (this is more than ISO 11270 below would allow)
-  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, steering_angle, lat_active, CCP.ANGLE_LIMITS)
-
-  # ISO 11270
-  # roll is passed to panda via custom Panda Data CAN message for internal usage only (not sent to car)
-  roll_compensation = roll * ACCELERATION_DUE_TO_GRAVITY 
-  max_lat_accel = ISO_LATERAL_ACCEL + roll_compensation
-  min_lat_accel = -ISO_LATERAL_ACCEL + roll_compensation
-  max_curvature = max_lat_accel / (max(v_ego_raw, 1.0) ** 2)
-  min_curvature = min_lat_accel / (max(v_ego_raw, 1.0) ** 2)
-
-  iso_limit_active = not (min_curvature <= apply_curvature <= max_curvature)
-  apply_curvature = float(np.clip(apply_curvature, min_curvature, max_curvature))
-
-  return apply_curvature, iso_limit_active
 
 
 def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
@@ -69,14 +50,14 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
   upper_limit_factor = 0.0625
   upper_limit_min = 0.
   upper_limit_max = upper_limit_factor * 2
-  
+
   upper_limit = np.interp(distance, [0, 100], [upper_limit_min, upper_limit_max]) # base line based on distance
-  
+
   set_speed_diff_up = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user or speed overshoot (includes hud - real speed difference!)
   set_speed_diff_up_factor = np.interp(set_speed_diff_up, [1, 1.75], [1., 0.]) # faster requested speed decrease and less speed overshoot downhill 
   lower_limit = np.interp(distance, [0, 6, 100], [lower_limit_min, lower_limit_factor, lower_limit_max]) # base line based on distance
   lower_limit = lower_limit * set_speed_diff_up_factor
-  
+
   return upper_limit, lower_limit
 
 
@@ -103,6 +84,8 @@ class CarController(CarControllerBase):
     self.hca_frame_same_torque = 0
     self.lead_distance_bars_last = None
     self.distance_bar_frame = 0
+    self.long_cruise_control = False
+    self.gra_enabled = False
     self.gra_up = False
     self.gra_down = False
 
@@ -129,15 +112,13 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          apply_curvature, iso_limit_active = apply_vw_meb_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, 0., CC.latActive, CC.rollDEPRECATED, self.CCP) # apply ISO 11270 limit lateral acceleration
-          if CS.out.steeringPressed: # roughly sync curvature when user overrides
-            apply_curvature = np.clip(apply_curvature, current_curvature - self.CCP.CURVATURE_ERROR, current_curvature + self.CCP.CURVATURE_ERROR)
-          apply_curvature = np.clip(apply_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX)
+          apply_curvature, iso_limit_active = apply_std_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, CC.rollDEPRECATED, CS.curvature,
+                                                                         self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
-          steering_power_min_by_speed = np.interp(CS.out.vEgoRaw, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
+          steering_power_min_by_speed = np.interp(CS.out.vEgo, [0, self.CCP.STEERING_POWER_MAX_BY_SPEED], [self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX]) # base level
           steering_curvature_diff = abs(apply_curvature - current_curvature) # keep power high at very low speed for both directions
           steering_curvature_increase = max(0, abs(apply_curvature) - abs(current_curvature)) # increase power for increasing steering at normal driving speeds
-          steering_curvature_change = np.interp(CS.out.vEgoRaw, [0., 3.], [steering_curvature_diff, steering_curvature_increase]) # maximum power seems to inhibit steering movement, decreasing does not increase power
+          steering_curvature_change = np.interp(CS.out.vEgo, [0., 3.], [steering_curvature_diff, steering_curvature_increase]) # maximum power seems to inhibit steering movement, decreasing does not increase power
           steering_power_target_curvature = steering_power_min_by_speed + self.CCP.CURVATURE_POWER_FACTOR * (steering_curvature_change + abs(apply_curvature)) # abs apply_curvature level keeps steering in place
           steering_power_target = np.clip(steering_power_target_curvature, self.CCP.STEERING_POWER_MIN, self.CCP.STEERING_POWER_MAX)
 
@@ -162,7 +143,7 @@ class CarController(CarControllerBase):
           if self.steering_power_last > 0: # keep HCA alive until steering power has reduced to zero
             hca_enabled = True
             current_curvature = CS.curvature
-            apply_curvature = np.clip(current_curvature, -self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX, self.CCP.ANGLE_LIMITS.STEER_ANGLE_MAX) # synchronize with current curvature
+            apply_curvature = np.clip(current_curvature, -self.CCP.CURVATURE_LIMITS.CURVATURE_MAX, self.CCP.CURVATURE_LIMITS.CURVATURE_MAX) # synchronize with current curvature
             steering_power = max(self.steering_power_last - self.CCP.STEERING_POWER_STEPS, 0)
           else: 
             hca_enabled = False
@@ -216,34 +197,40 @@ class CarController(CarControllerBase):
         can_sends.append(self.CCS.create_eps_update(self.packer_pt, CANBUS.cam, CS.eps_stock_values, ea_simulated_torque))
 
     # Emergency Assist intervention
-    if self.CP.flags & VolkswagenFlags.MEB:
-      # Method 1: send default EA values
-      # by jyoung anti EA intervention, send default values
-      #if self.frame % 2 == 0:
-      #  can_sends.append(mebcan.create_ea_control(self.packer_pt, CANBUS.pt))
-      #if self.frame % 50 == 0:
-      #  can_sends.append(mebcan.create_ea_hud(self.packer_pt, CANBUS.pt))
-
-      # Method 2: send capacitive steering wheel touched
-      # propably EA could be stock activated only for cars equipped with capacitive steering wheel
-      # (also stock long does resume from stop as long as hands on is detected)
+    if self.CP.flags & VolkswagenFlags.MEB and self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
+      # send capacitive steering wheel touched
+      # propably EA is stock activated only for cars equipped with capacitive steering wheel
+      # (also stock long does resume from stop as long as hands on is detected additionally to OP resume spam)
       if self.frame % 6 == 0:
-        if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
-          can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.ext_bus, CC.enabled, CS.klr_stock_values))
-        #else: # this else statement and following CAN command is for personal purposes: non KLR car with coded KLR for testing
-        #  can_sends.append(mebcan.create_hands_on_wheel_control(self.packer_pt, self.ext_bus))
+        can_sends.append(mebcan.create_capacitive_wheel_touch(self.packer_pt, self.ext_bus, CC.enabled, CS.klr_stock_values))
+
+    # **** Blinker Controls ************************************************** #
+    # "Wechselblinken" has to be allowed in assistance blinker functions in gateway
+    # "Wechselblinken" means switching between hazards and one sided indicators for every indicator cycle (VW MEB full cycle: 0.8 seconds, 1st normal, 2nd hazards)
+    # user input has hgher prio than EA indicating, post cycle handover is done via actual indicator signal if EA would already request
+    # signaling indicators for 1 frame to trigger the first non hazard cycle, retrigger after the car signals a fully ended cycle
+    if self.CP.flags & VolkswagenFlags.MEB:
+      if self.frame % 2 == 0:
+        blinker_active = CS.left_blinker_active or CS.right_blinker_active
+        left_blinker = CC.leftBlinker if not blinker_active else False
+        right_blinker = CC.rightBlinker if not blinker_active else False
+        can_sends.append(mebcan.create_blinker_control(self.packer_pt, CANBUS.pt, CS.ea_hud_stock_values, left_blinker, right_blinker))
+
+    # **** Cruise Controls ************************************************** #
+    
+    self.long_cruise_control = True if CS.acc_type == 3 and self.CP.flags & VolkswagenFlags.PQ else False
+    
+    if self.frame % 15 == 0 and self.CP.openpilotLongitudinalControl and self.long_cruise_control:
+      self.gra_enabled = CC.longActive and CS.out.cruiseState.enabled
+      set_speed = int(round(CS.out.cruiseState.speed * CV.MS_TO_KPH))
+      actuator_speed = int(round(actuators.speed * CV.MS_TO_KPH))
+      self.gra_up = True if set_speed < actuator_speed and self.gra_enabled else False
+      self.gra_down = True if set_speed > actuator_speed and self.gra_enabled else False
     
     # **** Acceleration Controls ******************************************** #
-
+    
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      if CS.acc_type == 3 and self.CP.flags & VolkswagenFlags.PQ:
-        gra_enabled = CC.longActive and CS.out.cruiseState.enabled
-        set_speed = int(round(CS.out.cruiseState.speed * CV.MS_TO_KPH))
-        actuator_speed = int(round(actuators.speed * CV.MS_TO_KPH))
-        self.gra_up = True if set_speed < actuator_speed and gra_enabled else False
-        self.gra_down = True if set_speed > actuator_speed and gra_enabled else False
-
-      else:
+      if not self.long_cruise_control:
         stopping = actuators.longControlState == LongCtrlState.stopping
         starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
         
@@ -333,11 +320,12 @@ class CarController(CarControllerBase):
 
     gra_send_ready = CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
     if gra_send_ready:
+      bus_send = CANBUS.main if self.CP.flags & VolkswagenFlags.PQ else self.ext_bus
       if self.CP.pcmCruise and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
+        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, bus_send, CS.gra_stock_values,
                                                              cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
-      elif self.CP.openpilotLongitudinalControl and (self.gra_up or self.gra_down):
-        can_sends.append(self.CCS.create_gra_buttons_control(self.packer_pt, self.ext_bus, CS.gra_stock_values,
+      elif self.CP.openpilotLongitudinalControl and self.long_cruise_control and self.gra_enabled:
+        can_sends.append(self.CCS.create_gra_buttons_control(self.packer_pt, bus_send, CS.gra_stock_values,
                                                              up=self.gra_up, down=self.gra_down))
         self.gra_up = False
         self.gra_down = False
