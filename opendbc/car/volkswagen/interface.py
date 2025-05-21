@@ -58,6 +58,9 @@ class CarInterface(CarInterfaceBase):
       if 0x25D in fingerprint[0]:  # KLR_01
         ret.flags |= VolkswagenFlags.STOCK_KLR_PRESENT.value
 
+      if all(msg in fingerprint[1] for msg in (0x462, 0x463, 0x464)):  # PSD_04, PSD_05, PSD_06
+        ret.flags |= VolkswagenFlags.STOCK_PSD_PRESENT.value
+
     else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagen)]
@@ -82,10 +85,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
-      ret.steerActuatorDelay = 0.22
+      ret.steerActuatorDelay = 0.3855 # live delay estimate
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif ret.flags & VolkswagenFlags.MEB:
-      ret.steerActuatorDelay = 0.45 # live delay estimate, originally estimated 0.25
+      ret.steerActuatorDelay = 0.3848 # live delay estimate
     else:
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]
