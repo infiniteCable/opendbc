@@ -55,7 +55,8 @@ class SpeedLimitManager:
       "psd": self.v_limit_psd if self.v_limit_psd != NOT_SET else NOT_SET,
       "legal": self.v_limit_psd_legal
     }
-  
+
+    v_limit_output = NOT_SET
     for source in ["vze", "psd", "legal"]:
       v = candidates[source]
       if v != NOT_SET:
