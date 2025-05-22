@@ -188,6 +188,7 @@ class SpeedLimitManager:
       if total_dist <= braking_distance and total_dist < best_result["dist"]:
         best_result["limit"] = speed_kmh
         best_result["dist"] = total_dist
+        return
 
     for next_id, s in self.predicative_segments.items():
       if s.get("ID_Prev") == seg_id:
