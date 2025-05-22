@@ -28,8 +28,6 @@ class SpeedLimitManager:
     self.predicative = predicative
     self.predicative_segments = {}
     self.current_predicative_segment = {"ID": NOT_SET, "Length": NOT_SET, "Speed": NOT_SET, "StreetType": NOT_SET}
-    self.preferred_limit_source = None # "psd_next", "vze", "psd", "legal"
-    self.hysteresis_kph = 5
 
   def update(self, current_speed_ms, psd_04, psd_05, psd_06, vze):
     # try reading speed form traffic sign recognition
@@ -46,40 +44,23 @@ class SpeedLimitManager:
       self._get_speed_limit_psd()
       self._get_speed_limit_psd_next(current_speed_ms)
 
+  def get_speed_limit_predicative(self):
+    v_limit_output = self.v_limit_psd_next if self.predicative and self.v_limit_psd_next != NOT_SET and self.v_limit_psd_next < self.v_limit_output_last else NOT_SET
+    
+    return v_limit_output * CV.KPH_TO_MS
+
   def get_speed_limit(self):
     candidates = {
-      "psd_next": self.v_limit_psd_next if self.predicative and self.v_limit_psd_next != NOT_SET else NOT_SET,
       "vze": self.v_limit_vze if self.v_limit_vze != NOT_SET and not self.v_limit_vze_sanity_error else NOT_SET,
       "psd": self.v_limit_psd if self.v_limit_psd != NOT_SET else NOT_SET,
       "legal": self.v_limit_psd_legal
     }
   
-    v_psd_next = candidates["psd_next"]
-  
-    if self.preferred_limit_source == "psd_next" and v_psd_next != NOT_SET:
-      v_limit_output = v_psd_next
-  
-    elif v_psd_next != NOT_SET:
-      lower_than_others = True
-      for src in ["vze", "psd", "legal"]:
-        v = candidates[src]
-        if v != NOT_SET and v <= v_psd_next:
-          lower_than_others = False
-          break
-  
-      if lower_than_others:
-        v_limit_output = v_psd_next
-        self.preferred_limit_source = "psd_next"
-      else:
-        v_limit_output = NOT_SET
-  
-    if v_limit_output == NOT_SET:
-      for source in ["vze", "psd", "legal"]:
-        v = candidates[source]
-        if v != NOT_SET:
-          v_limit_output = v
-          self.preferred_limit_source = source
-          break
+    for source in ["vze", "psd", "legal"]:
+      v = candidates[source]
+      if v != NOT_SET:
+        v_limit_output = v
+        break
   
     if v_limit_output > self.v_limit_max:
       v_limit_output = self.v_limit_max
