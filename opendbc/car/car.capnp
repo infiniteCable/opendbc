@@ -270,7 +270,7 @@ struct CarState {
     standstill @4 :Bool;
     nonAdaptive @5 :Bool;
     speedLimit @7 :Float32;
-    speedLimitPredicative @8 :Bool;
+    speedLimitPredicative @8 :Float32;
   }
 
   enum GearShifter {
@@ -409,6 +409,7 @@ struct CarControl {
     resume @1: Bool;
     override @4: Bool;
     speedLimit @5: Bool;
+    speedLimitPredicative @6: Bool;
     speedOverrideDEPRECATED @2: Float32;
     accelOverrideDEPRECATED @3: Float32;
   }
