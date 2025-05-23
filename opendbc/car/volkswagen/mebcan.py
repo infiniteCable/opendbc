@@ -237,9 +237,9 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active, esp_hold, ove
 def acc_hud_event(acc_hud_control, esp_hold, speed_limit_predicative):
   acc_event = 0
   
-  if esp_hold and acc_control == ACC_HUD_ACTIVE:
+  if esp_hold and acc_hud_control == ACC_HUD_ACTIVE:
     acc_event = 3 # acc ready message at standstill
-  elif acc_control in (ACC_HUD_ACTIVE, ACC_HUD_OVERRIDE) and speed_limit_predicative:
+  elif acc_hud_control in (ACC_HUD_ACTIVE, ACC_HUD_OVERRIDE) and speed_limit_predicative:
     acc_event = 4 # acc limited by speed limit by nav
 
   return acc_event
