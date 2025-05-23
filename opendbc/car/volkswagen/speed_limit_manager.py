@@ -189,7 +189,7 @@ class SpeedLimitManager:
       delta_v = abs(current_speed_ms - speed_kmh * CV.KPH_TO_MS)
       braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
 
-      if total_dist <= braking_distance and total_dist < best_result["dist"]:
+      if total_dist <= braking_distance and speed_kmh < best_result["limit"]:
         best_result["limit"] = speed_kmh
         best_result["dist"] = total_dist
 
@@ -206,10 +206,10 @@ class SpeedLimitManager:
     if current_id == NOT_SET or length_remaining == NOT_SET:
       return
 
-    best_result = {"limit": NOT_SET, "dist": float('inf')}
+    best_result = {"limit": float('inf'), "dist": float('inf')}
 
     self._dfs(current_id, length_remaining, set(), current_speed_ms, best_result)
-    if best_result["limit"] != NOT_SET:
+    if best_result["limit"] != float('inf'):
       self.v_limit_psd_next = best_result["limit"]
 
   def _get_speed_limit_psd(self):
