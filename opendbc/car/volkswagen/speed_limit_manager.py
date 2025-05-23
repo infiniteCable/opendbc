@@ -186,10 +186,8 @@ class SpeedLimitManager:
   
     speed_kmh = seg.get("Speed", NOT_SET)
     if seg.get("QualityFlag", False) and speed_kmh != NOT_SET:
-      v_target = speed_kmh * CV.KPH_TO_MS
-  
-      if v_target < self.v_limit_output_last * CV.KPH_TO_MS:
-        delta_v = current_speed_ms - v_target
+      if speed_kmh < self.v_limit_output_last:
+        delta_v = current_speed_ms - speed_kmh * CV.KPH_TO_MS
         braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
   
         if total_dist <= braking_distance:
