@@ -179,20 +179,24 @@ class SpeedLimitManager:
     if seg_id in visited:
       return
     visited.add(seg_id)
-
+  
     seg = self.predicative_segments.get(seg_id)
     if not seg:
       return
-
+  
     speed_kmh = seg.get("Speed", NOT_SET)
     if seg.get("QualityFlag", False) and speed_kmh != NOT_SET:
-      delta_v = abs(current_speed_ms - speed_kmh * CV.KPH_TO_MS)
-      braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
-
-      if total_dist <= braking_distance and speed_kmh < best_result["limit"]:
-        best_result["limit"] = speed_kmh
-        best_result["dist"] = total_dist
-
+      v_target = speed_kmh * CV.KPH_TO_MS
+  
+      if v_target < self.v_limit_output_last * CV.KPH_TO_MS:
+        delta_v = current_speed_ms - v_target
+        braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
+  
+        if total_dist <= braking_distance:
+          if speed_kmh < best_result["limit"]:
+            best_result["limit"] = speed_kmh
+            best_result["dist"] = total_dist
+  
     for next_id, s in self.predicative_segments.items():
       if s.get("ID_Prev") == seg_id:
         next_length = s.get("Length", 0)
