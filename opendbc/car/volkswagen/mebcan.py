@@ -234,6 +234,17 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active, esp_hold, ove
   return acc_hud_control
 
 
+def acc_hud_event(acc_hud_control, esp_hold, speed_limit_predictive):
+  acc_event = 0
+  
+  if esp_hold and acc_control == ACC_HUD_ACTIVE:
+    acc_event = 3 # acc ready message at standstill
+  elif acc_control in (ACC_HUD_ACTIVE, ACC_HUD_OVERRIDE) and speed_limit_predictive:
+    acc_event = 4 # acc limited by speed limit by nav
+
+  return acc_event
+  
+
 def get_desired_gap(distance_bars, desired_gap, current_gap_signal):
   # mapping desired gap to correct signal of corresponding distance bar
   gap = 0
@@ -244,7 +255,7 @@ def get_desired_gap(distance_bars, desired_gap, current_gap_signal):
   return gap
 
 
-def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, distance_bars, show_distance_bars, esp_hold, distance, desired_gap, fcw_alert):
+def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, distance_bars, show_distance_bars, esp_hold, distance, desired_gap, fcw_alert, acc_event):
 
   values = {
     "ACC_Status_ACC":                acc_control,
@@ -263,7 +274,7 @@ def create_acc_hud_control(packer, bus, acc_control, set_speed, lead_visible, di
     "ACC_Standby_Override":          1 if acc_control != ACC_HUD_ACTIVE else 0,
     "Street_Color":                  1 if acc_control in (ACC_HUD_ACTIVE, ACC_HUD_OVERRIDE) else 0, # light grey (1) or dark (0) street
     "Lead_Brightness":               3 if acc_control == ACC_HUD_ACTIVE else 0, # object shows in colour
-    "ACC_Events":                    3 if esp_hold and acc_control == ACC_HUD_ACTIVE else 0, # acc ready message at standstill
+    "ACC_Events":                    acc_event, # e.g. pACC Events
     "Zeitluecke_1":                  get_desired_gap(distance_bars, desired_gap, 1), # desired distance to lead object for distance bar 1
     "Zeitluecke_2":                  get_desired_gap(distance_bars, desired_gap, 2), # desired distance to lead object for distance bar 2
     "Zeitluecke_3":                  get_desired_gap(distance_bars, desired_gap, 3), # desired distance to lead object for distance bar 3
