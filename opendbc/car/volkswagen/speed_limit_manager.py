@@ -10,7 +10,7 @@ STREET_TYPE_NONURBAN = 2
 STREET_TYPE_HIGHWAY = 3
 SANITY_CHECK_DIFF_PERCENT_LOWER = 30
 SPEED_LIMIT_UNLIMITED_VZE_KPH = int(round(144 * CV.MS_TO_KPH))
-DECELERATION_PREDICATIVE = 1.0
+DECELERATION_PREDICATIVE = 0.25
 SEGMENT_DECAY = 10
 
 # this so invalidation mechanism found -> use decay, quality flag is worthless at the moment
@@ -112,8 +112,12 @@ class SpeedLimitManager:
 
   def _receive_current_segment_psd(self, psd_05):
     if psd_05["PSD_Pos_Standort_Eindeutig"] == 1:
-      self.current_predicative_segment["ID"] = psd_05["PSD_Pos_Segment_ID"]
       self.current_predicative_segment["Length"] = psd_05["PSD_Pos_Segmentlaenge"]
+      
+      if self.current_predicative_segment["ID"] != psd_05["PSD_Pos_Segment_ID"]:
+        self.current_predicative_segment["ID"] = psd_05["PSD_Pos_Segment_ID"]
+        self.current_predicative_segment["Speed"] = NOT_SET
+        self.current_predicative_segment["StreetType"] = NOT_SET
 
   def _refresh_current_segment(self):
     current_segment = self.current_predicative_segment["ID"]
