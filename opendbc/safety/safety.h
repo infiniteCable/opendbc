@@ -902,7 +902,6 @@ bool steer_curvature_cmd_checks(int desired_curvature, int desired_steer_power, 
     // ISO jerk limit
     const float ts_elapsed           = limits.send_rate;
     const float speed                = MAX((vehicle_speed.min / VEHICLE_SPEED_FACTOR) - 1., 1.0); // fudged
-    const float speed                = MAX(fudged_speed, 1.0);
     const float curvature_rate_limit = ISO_LATERAL_JERK / (speed * speed);  // rad/m/s
 
     const float curvature_last  = desired_curvature_last / limits.curvature_to_can;
