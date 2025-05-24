@@ -28,6 +28,7 @@ class SpeedLimitManager:
     self.predicative = predicative
     self.predicative_segments = {}
     self.current_predicative_segment = {"ID": NOT_SET, "Length": NOT_SET, "Speed": NOT_SET, "StreetType": NOT_SET}
+    self.v_limit_predicative_valid = False
 
   def update(self, current_speed_ms, psd_04, psd_05, psd_06, vze):
     # try reading speed form traffic sign recognition
@@ -115,6 +116,7 @@ class SpeedLimitManager:
       self.current_predicative_segment["Length"] = psd_05["PSD_Pos_Segmentlaenge"]
       
       if self.current_predicative_segment["ID"] != psd_05["PSD_Pos_Segment_ID"]:
+        self.v_limit_predicative_valid = False
         self.current_predicative_segment["ID"] = psd_05["PSD_Pos_Segment_ID"]
         self.current_predicative_segment["Speed"] = NOT_SET
         self.current_predicative_segment["StreetType"] = NOT_SET
@@ -201,6 +203,9 @@ class SpeedLimitManager:
         self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result)
 
   def _get_speed_limit_psd_next(self, current_speed_ms):
+    if self.v_limit_predicative_valid:
+      return
+      
     current_id = self.current_predicative_segment.get("ID")
     length_remaining = self.current_predicative_segment.get("Length")
     self.v_limit_psd_next = NOT_SET
@@ -213,6 +218,7 @@ class SpeedLimitManager:
     self._dfs(current_id, length_remaining, set(), current_speed_ms, best_result)
     if best_result["limit"] != float('inf'):
       self.v_limit_psd_next = best_result["limit"]
+      self.v_limit_predicative_valid = True
 
   def _get_speed_limit_psd(self):
     seg_id = self.current_predicative_segment.get("ID")
