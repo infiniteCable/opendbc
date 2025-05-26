@@ -10,7 +10,7 @@ STREET_TYPE_NONURBAN = 2
 STREET_TYPE_HIGHWAY = 3
 SANITY_CHECK_DIFF_PERCENT_LOWER = 30
 SPEED_LIMIT_UNLIMITED_VZE_KPH = int(round(144 * CV.MS_TO_KPH))
-DECELERATION_PREDICATIVE = 0.16
+DECELERATION_PREDICATIVE = 0.18
 SEGMENT_DECAY = 10
 
 # this so invalidation mechanism found -> use decay, quality flag is worthless at the moment
@@ -196,11 +196,14 @@ class SpeedLimitManager:
           if speed_kmh < best_result["limit"]:
             best_result["limit"] = speed_kmh
             best_result["dist"] = total_dist
+
+    children = [sid for sid, s in self.predicative_segments.items() if s.get("ID_Prev") == seg_id]
+    if len(children) > 1 and best_result["limit"] == float('inf'):
+      return  # Split detected, can not decide unique limit on current path
   
-    for next_id, s in self.predicative_segments.items():
-      if s.get("ID_Prev") == seg_id:
-        next_length = s.get("Length", 0)
-        self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result)
+    for next_id in children:
+      next_length = self.predicative_segments[next_id].get("Length", 0)
+      self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result, found_valid_limit)
 
   def _get_speed_limit_psd_next(self, current_speed_ms):
     if self.v_limit_predicative_valid:
@@ -216,6 +219,7 @@ class SpeedLimitManager:
     best_result = {"limit": float('inf'), "dist": float('inf')}
 
     self._dfs(current_id, length_remaining, set(), current_speed_ms, best_result)
+    
     if best_result["limit"] != float('inf'):
       self.v_limit_psd_next = best_result["limit"]
       self.v_limit_predicative_valid = True
