@@ -203,7 +203,7 @@ class SpeedLimitManager:
   
     for next_id in children:
       next_length = self.predicative_segments[next_id].get("Length", 0)
-      self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result, found_valid_limit)
+      self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result)
 
   def _get_speed_limit_psd_next(self, current_speed_ms):
     if self.v_limit_predicative_valid:
