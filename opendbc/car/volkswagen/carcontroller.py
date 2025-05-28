@@ -61,6 +61,11 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
   return upper_limit, lower_limit
 
 
+def fix_curvature_model_error_meb(curvature: float, v_ego: float, alpha: float = 0.03, v_ref: float = 25.0) -> float:
+    scale = 1.0 + alpha * (v_ego / v_ref) ** 2
+    return curvature * scale
+
+
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
@@ -112,6 +117,7 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
+          actuator_curvature_with_offset = fix_curvature_model_error_meb(actuator_curvature_with_offset, CS.out.vEgo) # compensate OP model curvature nerfing caused by non curvature actuator post processing
           apply_curvature, iso_limit_active = apply_std_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, CC.rollDEPRECATED, CS.curvature,
                                                                          self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
