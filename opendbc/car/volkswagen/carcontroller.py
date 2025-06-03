@@ -117,7 +117,7 @@ class CarController(CarControllerBase):
           hca_enabled = True
           current_curvature = CS.curvature
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          actuator_curvature_with_offset = fix_curvature_model_error_meb(actuator_curvature_with_offset, CS.out.vEgo) # compensate OP model curvature nerfing caused by non curvature actuator post processing
+          #actuator_curvature_with_offset = fix_curvature_model_error_meb(actuator_curvature_with_offset, CS.out.vEgo) # compensate OP model curvature nerfing caused by non curvature actuator post processing
           apply_curvature, iso_limit_active = apply_std_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, CC.rollDEPRECATED, CS.curvature,
                                                                          self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
