@@ -2,6 +2,8 @@
 
 // ISO 11270
 static const float ISO_LATERAL_ACCEL = 3.0;  // m/s^2
+static const float ISO_LATERAL_JERK = 5.0;  // m/s^3
+
 
 static const float EARTH_G = 9.81;
 static const float AVERAGE_ROAD_ROLL = 0.06;  // ~3.4 degrees, 6% superelevation
