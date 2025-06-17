@@ -44,7 +44,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMeb)]
       ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
       ret.transmissionType = TransmissionType.direct
-      ret.steerControlType = structs.CarParams.SteerControlType.angle
+      #ret.steerControlType = structs.CarParams.SteerControlType.angle
+      ret.steerControlType = structs.CarParams.SteerControlType.curvatureDEPRECATED
       ret.steerAtStandstill = True
 
       if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, QFK_01
@@ -88,7 +89,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.3855 # live delay estimate
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif ret.flags & VolkswagenFlags.MEB:
-      ret.steerActuatorDelay = 0.3848 # live delay estimate
+      ret.steerActuatorDelay = 0.3
+      ret.lateralTuning.pid.kpBP = [10., 25., 35.]
+      ret.lateralTuning.pid.kiBP = [10., 25., 35.]
+      ret.lateralTuning.pid.kf = 1.
+      ret.lateralTuning.pid.kpV = [0., 0.6, 1.1]
+      ret.lateralTuning.pid.kiV = [0., 0.02, 0.07]
     else:
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]
@@ -100,8 +106,10 @@ class CarInterface(CarInterfaceBase):
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
     if ret.flags & VolkswagenFlags.MEB:
-      ret.longitudinalActuatorDelay = 0.25
+      ret.longitudinalActuatorDelay = 0.3
       ret.radarDelay = 0.3
+      ret.longitudinalTuning.kiBP = [0., 10.]
+      ret.longitudinalTuning.kiV = [0.5, 0.]
 
     ret.alphaLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
     if alpha_long:
@@ -118,8 +126,6 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
     if ret.flags & VolkswagenFlags.MEB:
-      ret.startAccel = 2.0
       ret.stopAccel = -1.1
-      ret.stoppingDecelRate = 0.05
 
     return ret
