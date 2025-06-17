@@ -140,7 +140,7 @@ static void volkswagen_meb_rx_hook(const CANPacket_t *to_push) {
 
       vehicle_moving = (fr > 0U) || (rr > 0U) || (rl > 0U) || (fl > 0U);
 
-      UPDATE_VEHICLE_SPEED(((fr + rr + rl + fl) / 4 ) * 0.0075 / 3.6);
+      UPDATE_VEHICLE_SPEED(((fr + rr + rl + fl) / 4 ) * 0.0075 / KPH_TO_MS);
     }
 
     if (addr == MSG_QFK_01) { // we do not need conversion deg to can, same scaling as HCA_03 curvature
