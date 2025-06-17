@@ -134,7 +134,6 @@ typedef struct {
   const bool angle_is_curvature;         // if true, we can apply max lateral acceleration limits
   const bool enforce_angle_error;        // enables max_angle_error check
   const bool inactive_angle_is_zero;     // if false, enforces angle near meas when disabled (default)
-  const bool use_roll_data;              // if true: use roll data from OP, false: use static roll (upstream logic)
 } AngleSteeringLimits;
 
 // parameters for lateral accel/jerk angle limiting using a simple vehicle model
@@ -237,7 +236,6 @@ bool safety_rx_hook(const CANPacket_t *to_push);
 bool safety_tx_hook(CANPacket_t *to_send);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
-bool max_limit_check(int val, const int MAX_VAL, const int MIN_VAL);
 bool get_longitudinal_allowed(void);
 int ROUND(float val);
 void gen_crc_lookup_table_8(uint8_t poly, uint8_t crc_lut[]);
