@@ -363,9 +363,8 @@ class CarState(CarStateBase):
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(240, pt_cp.vl["SMLS_01"]["BH_Blinker_li"],
                                                                             pt_cp.vl["SMLS_01"]["BH_Blinker_re"])
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
+    
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
-
-    self.klr_stock_values = pt_cp.vl["KLR_01"] if self.CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT else {}
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"]) # this is also true for ESC Sport mode
