@@ -362,7 +362,7 @@ bool steer_curvature_cmd_checks(int desired_curvature, int desired_steer_power, 
     // ISO jerk limit
     const float ts_elapsed           = limits.send_rate;
     const float speed                = MAX((vehicle_speed.min / VEHICLE_SPEED_FACTOR) - 1., 1.0); // fudged
-    const float curvature_rate_limit = MAX_LATERAL_JERK / (speed * speed);  // rad/m/s
+    const float curvature_rate_limit = ISO_LATERAL_JERK / (speed * speed);  // rad/m/s
 
     const float curvature_last  = desired_curvature_last / limits.curvature_to_can;
     const float curvature_up    = curvature_last + curvature_rate_limit * ts_elapsed;
@@ -373,8 +373,8 @@ bool steer_curvature_cmd_checks(int desired_curvature, int desired_steer_power, 
 
     // ISO lateral limit    
     //dynamic roll from OP via CAN
-    const float max_lat_accel =  MAX_LATERAL_ACCEL - (roll.values[0] * EARTH_G);
-    const float min_lat_accel = -MAX_LATERAL_ACCEL - (roll.values[0] * EARTH_G);
+    const float max_lat_accel =  ISO_LATERAL_ACCEL - (roll.values[0] * EARTH_G);
+    const float min_lat_accel = -ISO_LATERAL_ACCEL - (roll.values[0] * EARTH_G);
 
     float max_curvature_upper = max_lat_accel / (speed * speed);
     float max_curvature_lower = min_lat_accel / (speed * speed);
