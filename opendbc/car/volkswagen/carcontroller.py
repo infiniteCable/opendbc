@@ -320,7 +320,7 @@ class CarController(CarControllerBase):
           gap = max(8, CS.out.vEgo * hud_control.leadFollowTime)
           distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
           acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
-                                                         CS.esp_hold_confirmation, CC.cruiseControl.override or CS.out.gasPressed)
+                                                         CC.cruiseControl.override or CS.out.gasPressed)
           speed_limit_predicative = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
           acc_hud_event = self.CCS.acc_hud_event(acc_hud_status, CS.esp_hold_confirmation, speed_limit_predicative)
           can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
