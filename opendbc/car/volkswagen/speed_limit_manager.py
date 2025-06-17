@@ -1,4 +1,5 @@
 import time
+import math
 
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.volkswagen.values import VolkswagenFlags
@@ -10,7 +11,7 @@ STREET_TYPE_NONURBAN = 2
 STREET_TYPE_HIGHWAY = 3
 SANITY_CHECK_DIFF_PERCENT_LOWER = 30
 SPEED_LIMIT_UNLIMITED_VZE_KPH = int(round(144 * CV.MS_TO_KPH))
-DECELERATION_PREDICATIVE = 0.18
+DECELERATION_PREDICATIVE = 0.5
 SEGMENT_DECAY = 10
 
 # this so invalidation mechanism found -> use decay, quality flag is worthless at the moment
@@ -28,7 +29,9 @@ class SpeedLimitManager:
     self.predicative = predicative
     self.predicative_segments = {}
     self.current_predicative_segment = {"ID": NOT_SET, "Length": NOT_SET, "Speed": NOT_SET, "StreetType": NOT_SET}
-    self.v_limit_predicative_valid = False
+    self.v_limit_psd_next_last_timestamp = 0
+    self.v_limit_psd_next_last = NOT_SET
+    self.v_limit_psd_next_decay_time = NOT_SET
 
   def update(self, current_speed_ms, psd_04, psd_05, psd_06, vze):
     # try reading speed form traffic sign recognition
@@ -116,7 +119,6 @@ class SpeedLimitManager:
       self.current_predicative_segment["Length"] = psd_05["PSD_Pos_Segmentlaenge"]
       
       if self.current_predicative_segment["ID"] != psd_05["PSD_Pos_Segment_ID"]:
-        self.v_limit_predicative_valid = False
         self.current_predicative_segment["ID"] = psd_05["PSD_Pos_Segment_ID"]
         self.current_predicative_segment["Speed"] = NOT_SET
         self.current_predicative_segment["StreetType"] = NOT_SET
@@ -205,10 +207,7 @@ class SpeedLimitManager:
       next_length = self.predicative_segments[next_id].get("Length", 0)
       self._dfs(next_id, total_dist + next_length, visited.copy(), current_speed_ms, best_result)
 
-  def _get_speed_limit_psd_next(self, current_speed_ms):
-    if self.v_limit_predicative_valid:
-      return
-      
+  def _get_speed_limit_psd_next(self, current_speed_ms):      
     current_id = self.current_predicative_segment.get("ID")
     length_remaining = self.current_predicative_segment.get("Length")
     self.v_limit_psd_next = NOT_SET
@@ -217,12 +216,20 @@ class SpeedLimitManager:
       return
 
     best_result = {"limit": float('inf'), "dist": float('inf')}
-
     self._dfs(current_id, length_remaining, set(), current_speed_ms, best_result)
-    
+
+    now = time.time()
     if best_result["limit"] != float('inf'):
       self.v_limit_psd_next = best_result["limit"]
-      self.v_limit_predicative_valid = True
+      self.v_limit_psd_next_last = best_result["limit"]
+      self.v_limit_psd_next_last_timestamp = now
+      self.v_limit_psd_next_decay_time = math.sqrt(2 * best_result["dist"] / DECELERATION_PREDICATIVE)
+    else:
+      if now - self.v_limit_psd_next_last_timestamp <= self.v_limit_psd_next_decay_time and self.v_limit_output_last != self.v_limit_psd_next_last:
+        self.v_limit_psd_next = self.v_limit_psd_next_last
+      else:
+        self.v_limit_psd_next_last = NOT_SET
+        self.v_limit_psd_next_decay_time = NOT_SET
 
   def _get_speed_limit_psd(self):
     seg_id = self.current_predicative_segment.get("ID")
