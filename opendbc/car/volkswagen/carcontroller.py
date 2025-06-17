@@ -10,18 +10,21 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
+def get_long_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
   # jerk limit are used to improve comfort
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
   # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
   # -> set comfortable jerks
+  if not enabled:
+    return 0., 0., 0.
+    
   jerk_limit = 5.0
   jerk_limit_min = 0.5
   factor_up = 2.0
   factor_down = 3.0
   error_gain = 0.6
-
+  
   if override:
     jerk_raw = 0.
     jerk_up = jerk_limit_min
@@ -37,7 +40,7 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
     jerk_down = max(jerk_limit_min, min(jerk_down, jerk_limit))
 
   return jerk_up, jerk_down, jerk_raw
-
+  
 
 def get_long_control_limits(enabled: bool, speed: float, set_speed: float, distance: float):
   # control limits are used to improve comfort
@@ -267,7 +270,7 @@ class CarController(CarControllerBase):
 
           upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.setSpeed, hud_control.leadDistance)
           upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(CC.enabled, accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override)
-        
+          
           acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)          
           acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                  CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
