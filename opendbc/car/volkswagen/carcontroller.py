@@ -39,11 +39,14 @@ def get_long_jerk_limits(accel: float, accel_last: float, a_ego: float, dt: floa
   return jerk_up, jerk_down, jerk_raw
 
 
-def get_long_control_limits(speed: float, set_speed: float, distance: float):
+def get_long_control_limits(enabled: bool, speed: float, set_speed: float, distance: float):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
   # limits are controlled mainly by distance of lead car
   # problem: no data for approching a non car like target: for now keep limits at minimum if no lead is detected   
+  if not enabled:
+    return 0., 0.
+
   lower_limit_factor = 0.048
   lower_limit_min = 0.
   lower_limit_max = lower_limit_factor * 6
@@ -55,15 +58,24 @@ def get_long_control_limits(speed: float, set_speed: float, distance: float):
 
   set_speed_diff_up = max(0, abs(speed) - abs(set_speed)) # set speed difference down requested by user or speed overshoot (includes hud - real speed difference!)
   set_speed_diff_up_factor = np.interp(set_speed_diff_up, [1, 1.75], [1., 0.]) # faster requested speed decrease and less speed overshoot downhill 
-  lower_limit = np.interp(distance, [0, 6, 100], [lower_limit_min, lower_limit_factor, lower_limit_max]) # base line based on distance
+  lower_limit = np.interp(distance, [0, 100], [lower_limit_min, lower_limit_max]) # base line based on distance
   lower_limit = lower_limit * set_speed_diff_up_factor
 
   return upper_limit, lower_limit
 
 
-def fix_curvature_model_error_meb(curvature: float, v_ego: float, alpha: float = 0.03, v_ref: float = 25.0) -> float:
-    scale = 1.0 + alpha * (v_ego / v_ref) ** 2
-    return curvature * scale
+def sigmoid_curvature_boost_meb(kappa: float, v_ego: float, kappa_thresh: float = 0.0) -> float:
+  # compensate non linear behaviour: boost low curvatures
+  v_points = np.array([20.0, 40.0])
+  boost_values = np.array([1.5, 2.1]) # increase boost amplitude with speed
+  boost = float(np.interp(v_ego, v_points, boost_values))
+  steepness_values = np.array([5000.0, 3200.0]) # increase boost area with speed
+  steepness = float(np.interp(v_ego, v_points, steepness_values))
+
+  abs_kappa = abs(kappa)
+  boost_factor = 1.0 + (boost - 1.0) / (1 + np.exp(steepness * (abs_kappa - kappa_thresh)))
+
+  return np.sign(kappa) * abs_kappa * boost_factor
 
 
 class CarController(CarControllerBase):
@@ -116,8 +128,8 @@ class CarController(CarControllerBase):
         if CC.latActive:
           hca_enabled = True
           current_curvature = CS.curvature
+          #actuator_curvature = sigmoid_curvature_boost_meb(actuators.curvature, CS.out.vEgo)
           actuator_curvature_with_offset = actuators.curvature + (CS.curvature - CC.currentCurvature)
-          #actuator_curvature_with_offset = fix_curvature_model_error_meb(actuator_curvature_with_offset, CS.out.vEgo) # compensate OP model curvature nerfing caused by non curvature actuator post processing
           apply_curvature, iso_limit_active = apply_std_curvature_limits(actuator_curvature_with_offset, self.apply_curvature_last, CS.out.vEgoRaw, CC.rollDEPRECATED, CS.curvature,
                                                                          self.CCP.STEER_STEP, CC.latActive, self.CCP.CURVATURE_LIMITS)
 
@@ -242,28 +254,26 @@ class CarController(CarControllerBase):
         
         if self.CP.flags & VolkswagenFlags.MEB:
           # Logic to prevent car error with EPB:
-          #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override and right at the end of active long control
+          #   * send a few frames of HMS RAMP RELEASE command at the very begin of long override and right at the end of active long control -> clean exit of ACC car controls
+          #   * (1 frame of HMS RAMP RELEASE is enough, but lower the possibility of panda safety blocking it)
           accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.enabled else 0)
 
-          # 1 frame of long_override_begin is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
           long_override = CC.cruiseControl.override or CS.out.gasPressed
           self.long_override_counter = min(self.long_override_counter + 1, 5) if long_override else 0
           long_override_begin = long_override and self.long_override_counter < 5
 
-          # 1 frame of long_disabling is enough, but lower the possibility of panda safety blocking it for now until we adapt panda safety correctly
           self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
           long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-          upper_control_limit, lower_control_limit = get_long_control_limits(CS.out.vEgoRaw, hud_control.setSpeed, hud_control.leadDistance) if CC.enabled else (0, 0)
-          upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override) if CC.enabled else (0, 0, 0)
+          upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.setSpeed, hud_control.leadDistance)
+          upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(CC.enabled, accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override)
         
-          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
-                                                   CS.esp_hold_confirmation, long_override)          
+          acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)          
           acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                  CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
           can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
                                                              upper_jerk, lower_jerk, upper_control_limit, lower_control_limit,
-                                                             accel, acc_control, acc_hold_type, stopping, starting, CS.esp_hold_confirmation,
+                                                             accel, acc_control, acc_hold_type, stopping, starting,
                                                              long_override, CS.travel_assist_available))
           self.accel_last = accel
 
