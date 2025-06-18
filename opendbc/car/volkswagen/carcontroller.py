@@ -20,7 +20,7 @@ def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_dow
     return 0., 0., 0., 0.
     
   jerk_limit_max = 5.0
-  jerk_limit_min = 0.5
+  jerk_limit_min = 0.1
   
   if override:
     jerk_up = jerk_limit_min
