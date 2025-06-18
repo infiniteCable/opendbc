@@ -29,8 +29,8 @@ def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_dow
   else:
     j = (accel - accel_last) / dt
 
-    tgt_up = j if j > 0 else 0.
-    tgt_down = j if j < 0 else 0.
+    tgt_up = abs(j) if j > 0 else 0.
+    tgt_down = abs(j) if j < 0 else 0.
 
     dy_up += filter_gain * (tgt_up - jerk_up - dy_up)
     jerk_up += dt * dy_up
