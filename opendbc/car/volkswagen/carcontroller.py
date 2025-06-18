@@ -10,35 +10,33 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt, T=0.2):
-  # jerk limit are used to improve comfort
+def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt,
+                         filter_gain=0.5, jerk_limit_min=0.2, jerk_limit_max=5.0):
+  # jerk limits are used to improve comfort
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
   # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
   # -> set comfortable jerks
+
   if not enabled:
     return 0., 0., 0., 0.
-    
-  jerk_limit_max = 5.0
-  jerk_limit_min = 0.1
-  
+
   if override:
     jerk_up = jerk_limit_min
     jerk_down = jerk_limit_min
-    dy_up = 0
-    dy_down = 0
+    dy_up = 0.
+    dy_down = 0.
   else:
     j = (accel - accel_last) / dt
-    a = T / (T + dt)
-    
-    tgt_up = j if j > 0 else 0.0
-    tgt_down = j if j < 0 else 0.0
 
-    dy_up += (1 - a) * (tgt_up - jerk_up - dy_up)
+    tgt_up = j if j > 0 else 0.
+    tgt_down = j if j < 0 else 0.
+
+    dy_up += filter_gain * (tgt_up - jerk_up - dy_up)
     jerk_up += dt * dy_up
     jerk_up = np.clip(jerk_up, jerk_limit_min, jerk_limit_max)
 
-    dy_down += (1 - a) * (tgt_down - jerk_down - dy_down)
+    dy_down += filter_gain * (tgt_down - jerk_down - dy_down)
     jerk_down += dt * dy_down
     jerk_down = np.clip(jerk_down, jerk_limit_min, jerk_limit_max)
 
