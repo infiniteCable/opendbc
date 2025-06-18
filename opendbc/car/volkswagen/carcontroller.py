@@ -10,36 +10,39 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
-def get_long_jerk_limits(enabled: bool, accel: float, accel_last: float, a_ego: float, dt: float, jerk_prev: float, override: bool):
+def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt, T=0.2):
   # jerk limit are used to improve comfort
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
   # (2) sending accel = 0 and allowing a high jerk results in a abrupt accel cut -> lack of comfort
   # -> set comfortable jerks
   if not enabled:
-    return 0., 0., 0.
+    return 0., 0., 0., 0.
     
-  jerk_limit = 5.0
+  jerk_limit_max = 5.0
   jerk_limit_min = 0.5
-  factor_up = 2.0
-  factor_down = 3.0
-  error_gain = 0.6
   
   if override:
-    jerk_raw = 0.
     jerk_up = jerk_limit_min
     jerk_down = jerk_limit_min
+    dy_up = 0
+    dy_down = 0
   else:
-    accel_diff = (accel - accel_last) / dt
-    jerk_raw = 0.9 * jerk_prev + 0.1 * accel_diff
-    a_error = accel - a_ego
-    jerk_raw += a_error * error_gain
-    jerk_up = jerk_raw * factor_up
-    jerk_down = -jerk_raw * factor_down
-    jerk_up = max(jerk_limit_min, min(jerk_up, jerk_limit))
-    jerk_down = max(jerk_limit_min, min(jerk_down, jerk_limit))
+    j = (accel - accel_last) / dt
+    a = T / (T + dt)
+    
+    tgt_up = j if j > 0 else 0.0
+    tgt_down = j if j < 0 else 0.0
 
-  return jerk_up, jerk_down, jerk_raw
+    dy_up += (1 - a) * (tgt_up - jerk_up - dy_up)
+    jerk_up += dt * dy_up
+    jerk_up = np.clip(jerk_up, jerk_limit_min, jerk_limit_max)
+
+    dy_down += (1 - a) * (tgt_down - jerk_down - dy_down)
+    jerk_down += dt * dy_down
+    jerk_down = np.clip(jerk_down, jerk_limit_min, jerk_limit_max)
+
+  return jerk_up, jerk_down, dy_up, dy_down
   
 
 def get_long_control_limits(enabled: bool, speed: float, set_speed: float, distance: float):
@@ -94,8 +97,11 @@ class CarController(CarControllerBase):
     self.apply_torque_last = 0
     self.apply_curvature_last = 0.
     self.steering_power_last = 0
-    self.accel_last = 0
-    self.long_jerk_last = 0
+    self.accel_last = 0.
+    self.long_jerk_up_last = 0.
+    self.long_jerk_down_last = 0.
+    self.long_dy_up_last = 0.
+    self.long_dy_down_last = 0.
     self.long_override_counter = 0
     self.long_disabled_counter = 0
     self.gra_acc_counter_last = None
@@ -269,13 +275,17 @@ class CarController(CarControllerBase):
           long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
           upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.setSpeed, hud_control.leadDistance)
-          upper_jerk, lower_jerk, self.long_jerk_last = get_long_jerk_limits(CC.enabled, accel, self.accel_last, CS.out.aEgo, DT_CTRL * self.CCP.ACC_CONTROL_STEP, self.long_jerk_last, long_override)
+          self.long_jerk_up_last, self.long_jerk_down_last, self.long_dy_up_last, self.long_dy_down_last = get_long_jerk_limits(CC.enabled, long_override, accel,
+                                                                                                                                self.accel_last, self.long_jerk_up_last,
+                                                                                                                                self.long_jerk_down_last, self.long_dy_up_last,
+                                                                                                                                self.long_dy_down_last,
+                                                                                                                                DT_CTRL * self.CCP.ACC_CONTROL_STEP)
           
           acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)          
           acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
                                                  CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
           can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
-                                                             upper_jerk, lower_jerk, upper_control_limit, lower_control_limit,
+                                                             self.long_jerk_up_last, self.long_jerk_down_last, upper_control_limit, lower_control_limit,
                                                              accel, acc_control, acc_hold_type, stopping, starting,
                                                              long_override, CS.travel_assist_available))
           self.accel_last = accel
