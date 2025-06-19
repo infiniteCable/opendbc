@@ -2,7 +2,7 @@ import numpy as np
 
 
 def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt,
-                         filter_gain=0.85, jerk_limit_min=0.4, jerk_limit_max=5.0):
+                         critical_state, filter_gain=0.85, jerk_limit_min=0.4, jerk_limit_max=5.0):
   # jerk limits are used to improve comfort
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
@@ -14,6 +14,11 @@ def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_dow
   if override:
     jerk_up = jerk_limit_min
     jerk_down = jerk_limit_min
+    dy_up = 0.
+    dy_down = 0.
+  elif critical_state:
+    jerk_up = jerk_limit_max
+    jerk_down = jerk_limit_max
     dy_up = 0.
     dy_down = 0.
   else:
@@ -33,7 +38,7 @@ def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_dow
   return jerk_up, jerk_down, dy_up, dy_down
 
 
-def get_long_control_limits(enabled: bool, speed: float, set_speed: float, distance: float):
+def get_long_control_limits(enabled: bool, speed: float, set_speed: float, distance: float, critical_state: bool):
   # control limits are used to improve comfort
   # also used to reduce an effect of decel overshoot when target is breaking
   # limits are controlled mainly by distance of lead car
@@ -47,6 +52,9 @@ def get_long_control_limits(enabled: bool, speed: float, set_speed: float, dista
   upper_limit_factor = 0.0625
   upper_limit_min = 0.
   upper_limit_max = upper_limit_factor * 2
+
+  if critical_state:
+    return lower_limit_min, upper_limit_min
 
   upper_limit = np.interp(distance, [0, 100], [upper_limit_min, upper_limit_max]) # base line based on distance
 
