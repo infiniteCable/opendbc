@@ -201,12 +201,14 @@ class CarController(CarControllerBase):
           self.long_disabled_counter = min(self.long_disabled_counter + 1, 5) if not CC.enabled else 0
           long_disabling = not CC.enabled and self.long_disabled_counter < 5
 
-          upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.setSpeed, hud_control.leadDistance)
+          critical_state = hud_control.visualAlert == VisualAlert.fcw
+          upper_control_limit, lower_control_limit = get_long_control_limits(CC.enabled, CS.out.vEgo, hud_control.setSpeed, hud_control.leadDistance, critical_state)
           self.long_jerk_up_last, self.long_jerk_down_last, self.long_dy_up_last, self.long_dy_down_last = get_long_jerk_limits(CC.enabled, long_override, accel,
                                                                                                                                 self.accel_last, self.long_jerk_up_last,
                                                                                                                                 self.long_jerk_down_last, self.long_dy_up_last,
                                                                                                                                 self.long_dy_down_last,
-                                                                                                                                DT_CTRL * self.CCP.ACC_CONTROL_STEP)
+                                                                                                                                DT_CTRL * self.CCP.ACC_CONTROL_STEP,
+                                                                                                                                critical_state)
           
           acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, long_override)          
           acc_hold_type = self.CCS.acc_hold_type(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled, starting, stopping,
@@ -215,15 +217,14 @@ class CarController(CarControllerBase):
                                                              self.long_jerk_up_last, self.long_jerk_down_last, upper_control_limit, lower_control_limit,
                                                              accel, acc_control, acc_hold_type, stopping, starting,
                                                              long_override, CS.travel_assist_available))
-          self.accel_last = accel
 
         else:
           accel = float(np.clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0)
-          self.accel_last = accel
         
           acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
           can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
                                                              acc_control, stopping, starting, CS.esp_hold_confirmation))
+        self.accel_last = accel
 
       #if self.aeb_available:
       #  if self.frame % self.CCP.AEB_CONTROL_STEP == 0:
@@ -252,7 +253,7 @@ class CarController(CarControllerBase):
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if not(CS.acc_type == 3 and self.CP.flags & VolkswagenFlags.PQ):
         if self.CP.flags & VolkswagenFlags.MEB:
-          fcw_alert = True if hud_control.visualAlert == VisualAlert.fcw else False
+          fcw_alert = hud_control.visualAlert == VisualAlert.fcw
           show_distance_bars = self.frame - self.distance_bar_frame < 400
           gap = max(8, CS.out.vEgo * hud_control.leadFollowTime)
           distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
