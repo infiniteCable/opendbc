@@ -2,7 +2,7 @@ import numpy as np
 
 
 def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt,
-                         filter_gain=0.75, jerk_limit_min=0.5, jerk_limit_max=5.0):
+                         filter_gain=0.85, jerk_limit_min=0.4, jerk_limit_max=5.0):
   # jerk limits are used to improve comfort
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
