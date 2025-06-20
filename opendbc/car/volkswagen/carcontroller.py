@@ -41,6 +41,7 @@ class CarController(CarControllerBase):
     self.gra_enabled = False
     self.gra_up = False
     self.gra_down = False
+    self.speed_limit_last = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -259,12 +260,18 @@ class CarController(CarControllerBase):
           distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
           acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                          CC.cruiseControl.override or CS.out.gasPressed)
+          
           sl_predicative_active = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
-          acc_hud_event = self.CCS.acc_hud_event(acc_hud_status, CS.esp_hold_confirmation, speed_limit_predicative)
-          sl_predicative = map_speed_to_acc_tempolimit(CS.out.cruiseState.speedLimitPredicative)
+          sl_active = True if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit else False
+          self.speed_limit_last = CS.out.cruiseState.speedLimit
+          speed_limit = CS.out.cruiseState.speedLimitPredicative if sl_predicative_active else (CS.out.cruiseState.speedLimit if sl_active else 0)
+          speed_limit_mapped = map_speed_to_acc_tempolimit(speed_limit)
+          
+          acc_hud_event = self.CCS.acc_hud_event(acc_hud_status, CS.esp_hold_confirmation, sl_predicative_active, sl_active)
+          
           can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
                                                            hud_control.leadVisible, hud_control.leadDistanceBars + 1, show_distance_bars,
-                                                           CS.esp_hold_confirmation, distance, gap, fcw_alert, acc_hud_event, sl_predicative))
+                                                           CS.esp_hold_confirmation, distance, gap, fcw_alert, acc_hud_event, speed_limit_mapped))
 
         else:
           lead_distance = 0
