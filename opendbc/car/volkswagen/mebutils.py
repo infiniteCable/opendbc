@@ -1,4 +1,5 @@
 import numpy as np
+from opendbc.car.common.conversions import Conversions as CV
 
 
 def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt,
