@@ -32,6 +32,7 @@ class SpeedLimitManager:
     self.v_limit_psd_next_last_timestamp = 0
     self.v_limit_psd_next_last = NOT_SET
     self.v_limit_psd_next_decay_time = NOT_SET
+    self.v_limit_changed = False
 
   def update(self, current_speed_ms, psd_04, psd_05, psd_06, vze):
     # try reading speed form traffic sign recognition
@@ -71,6 +72,8 @@ class SpeedLimitManager:
       v_limit_output = self.v_limit_max
   
     self.v_limit_vze_sanity_error = False
+    
+    self.v_limit_changed = True if self.v_limit_output_last != v_limit_output else False
     self.v_limit_output_last = v_limit_output
   
     return v_limit_output * CV.KPH_TO_MS
@@ -225,7 +228,7 @@ class SpeedLimitManager:
       self.v_limit_psd_next_last_timestamp = now
       self.v_limit_psd_next_decay_time = math.sqrt(2 * best_result["dist"] / DECELERATION_PREDICATIVE)
     else:
-      if now - self.v_limit_psd_next_last_timestamp <= self.v_limit_psd_next_decay_time and self.v_limit_output_last != self.v_limit_psd_next_last:
+      if now - self.v_limit_psd_next_last_timestamp <= self.v_limit_psd_next_decay_time and self.v_limit_output_last > self.v_limit_psd_next_last and not self.v_limit_changed:
         self.v_limit_psd_next = self.v_limit_psd_next_last
       else:
         self.v_limit_psd_next_last = NOT_SET
