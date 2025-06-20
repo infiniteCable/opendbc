@@ -42,6 +42,7 @@ class CarController(CarControllerBase):
     self.gra_up = False
     self.gra_down = False
     self.speed_limit_last = 0
+    self.speed_limit_changed_timer = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -262,8 +263,9 @@ class CarController(CarControllerBase):
                                                          CC.cruiseControl.override or CS.out.gasPressed)
           
           sl_predicative_active = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
-          sl_active = True if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit else False
+          self.speed_limit_changed_timer = self.frame if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit else 0
           self.speed_limit_last = CS.out.cruiseState.speedLimit
+          sl_active = self.frame - self.speed_limit_changed_timer < 400
           speed_limit = CS.out.cruiseState.speedLimitPredicative if sl_predicative_active else (CS.out.cruiseState.speedLimit if sl_active else 0)
           speed_limit_mapped = map_speed_to_acc_tempolimit(speed_limit)
           
