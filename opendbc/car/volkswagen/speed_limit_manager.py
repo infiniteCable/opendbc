@@ -11,7 +11,7 @@ STREET_TYPE_NONURBAN = 2
 STREET_TYPE_HIGHWAY = 3
 SANITY_CHECK_DIFF_PERCENT_LOWER = 30
 SPEED_LIMIT_UNLIMITED_VZE_KPH = int(round(144 * CV.MS_TO_KPH))
-DECELERATION_PREDICATIVE = 0.25
+DECELERATION_PREDICATIVE = 0.2
 SEGMENT_DECAY = 10
 
 # this so invalidation mechanism found -> use decay, quality flag is worthless at the moment
@@ -203,7 +203,7 @@ class SpeedLimitManager:
             best_result["dist"] = total_dist
 
     children = [sid for sid, s in self.predicative_segments.items() if s.get("ID_Prev") == seg_id]
-    if len(children) > 1 and best_result["limit"] == float('inf'):
+    if len(children) > 1:
       return  # Split detected, can not decide unique limit on current path
   
     for next_id in children:
