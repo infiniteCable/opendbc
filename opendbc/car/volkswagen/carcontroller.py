@@ -5,7 +5,7 @@ from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.volkswagen import mqbcan, pqcan, mebcan, pandacan
 from opendbc.car.volkswagen.values import CANBUS, CarControllerParams, VolkswagenFlags
-from opendbc.car.volkswagen.mebutils import get_long_jerk_limits, get_long_control_limits, sigmoid_curvature_boost_meb
+from opendbc.car.volkswagen.mebutils import get_long_jerk_limits, get_long_control_limits, map_speed_to_acc_tempolimit
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState
@@ -259,11 +259,12 @@ class CarController(CarControllerBase):
           distance = max(8, hud_control.leadDistance) if hud_control.leadDistance != 0 else 0
           acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.enabled,
                                                          CC.cruiseControl.override or CS.out.gasPressed)
-          speed_limit_predicative = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
+          sl_predicative_active = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
           acc_hud_event = self.CCS.acc_hud_event(acc_hud_status, CS.esp_hold_confirmation, speed_limit_predicative)
+          sl_predicative = map_speed_to_acc_tempolimit(CS.out.cruiseState.speedLimitPredicative)
           can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, hud_control.setSpeed * CV.MS_TO_KPH,
                                                            hud_control.leadVisible, hud_control.leadDistanceBars + 1, show_distance_bars,
-                                                           CS.esp_hold_confirmation, distance, gap, fcw_alert, acc_hud_event))
+                                                           CS.esp_hold_confirmation, distance, gap, fcw_alert, acc_hud_event, sl_predicative))
 
         else:
           lead_distance = 0
