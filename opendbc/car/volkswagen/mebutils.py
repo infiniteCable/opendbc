@@ -82,3 +82,24 @@ def sigmoid_curvature_boost_meb(kappa: float, v_ego: float, kappa_thresh: float 
   boost_factor = 1.0 + (boost - 1.0) / (1 + np.exp(steepness * (abs_kappa - kappa_thresh)))
 
   return np.sign(kappa) * abs_kappa * boost_factor
+
+
+def map_speed_to_acc_tempolimit(v_ms):
+  acc_tempolimit_kph = { # DBC Mapping
+    1: 5, 2: 7, 3: 10, 4: 15, 5: 20, 6: 25, 7: 30, 8: 35,
+    9: 40, 10: 45, 11: 50, 12: 55, 13: 60, 14: 65, 15: 70,
+    16: 75, 17: 80, 18: 85, 19: 90, 20: 95, 21: 100, 22: 110,
+    23: 120, 24: 130, 25: 140, 26: 150, 27: 160, 28: 200,
+    30: 250
+  }
+
+  v_kph = int(round(v_ms * CV.MS_TO_KPH))
+  acc_value = 0
+
+  for val, limit in sorted(acc_tempolimit_kph.items()):
+    if v_kph >= limit:
+      acc_value = val
+    else:
+      break
+
+  return acc_value
