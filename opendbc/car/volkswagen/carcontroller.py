@@ -263,7 +263,8 @@ class CarController(CarControllerBase):
                                                          CC.cruiseControl.override or CS.out.gasPressed)
           
           sl_predicative_active = True if CC.cruiseControl.speedLimitPredicative and CS.out.cruiseState.speedLimitPredicative != 0 else False
-          self.speed_limit_changed_timer = self.frame if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit else 0
+          if CC.cruiseControl.speedLimit and CS.out.cruiseState.speedLimit != 0 and self.speed_limit_last != CS.out.cruiseState.speedLimit:
+            self.speed_limit_changed_timer = self.frame 
           self.speed_limit_last = CS.out.cruiseState.speedLimit
           sl_active = self.frame - self.speed_limit_changed_timer < 400
           speed_limit = CS.out.cruiseState.speedLimitPredicative if sl_predicative_active else (CS.out.cruiseState.speedLimit if sl_active else 0)
