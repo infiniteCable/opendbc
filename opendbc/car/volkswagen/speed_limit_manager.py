@@ -11,7 +11,7 @@ STREET_TYPE_NONURBAN = 2
 STREET_TYPE_HIGHWAY = 3
 SANITY_CHECK_DIFF_PERCENT_LOWER = 30
 SPEED_LIMIT_UNLIMITED_VZE_KPH = int(round(144 * CV.MS_TO_KPH))
-DECELERATION_PREDICATIVE = 0.2
+DECELERATION_PREDICATIVE = 0.3
 SEGMENT_DECAY = 10
 
 # this so invalidation mechanism found -> use decay, quality flag is worthless at the moment
@@ -195,12 +195,14 @@ class SpeedLimitManager:
     if seg.get("QualityFlag", False) and speed_kmh != NOT_SET:
       if speed_kmh < self.v_limit_output_last:
         delta_v = current_speed_ms - speed_kmh * CV.KPH_TO_MS
-        braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
+        
+        if delta_v > 0:
+          braking_distance = (delta_v ** 2) / (2 * DECELERATION_PREDICATIVE)
   
-        if total_dist <= braking_distance:
-          if speed_kmh < best_result["limit"]:
-            best_result["limit"] = speed_kmh
-            best_result["dist"] = total_dist
+          if total_dist <= braking_distance:
+            if speed_kmh < best_result["limit"]:
+              best_result["limit"] = speed_kmh
+              best_result["dist"] = total_dist
 
     children = [sid for sid, s in self.predicative_segments.items() if s.get("ID_Prev") == seg_id]
     if len(children) > 1:
