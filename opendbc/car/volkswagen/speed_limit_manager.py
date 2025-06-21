@@ -174,13 +174,28 @@ class SpeedLimitManager:
         psd_06["PSD_Ges_Gesetzlich_Kategorie"] == 0 and
         psd_06["PSD_Ges_Segment_ID"] != NOT_SET):
 
-      raw_speed = psd_06["PSD_Ges_Geschwindigkeit"]
+      raw_speed = psd_06["PSD_Ges_Geschwindigkeit"] if self._speed_limit_is_valid_now_psd(psd_06) else NOT_SET
       segment_id = psd_06["PSD_Ges_Segment_ID"]
 
       if segment_id in self.predicative_segments:
         speed = self._convert_raw_speed_psd(raw_speed, self.predicative_segments[segment_id]["StreetType"])
         self.predicative_segments[segment_id]["Speed"] = speed
         self.predicative_segments[segment_id]["QualityFlag"] = True
+
+  def _speed_limit_is_valid_now_psd(self, psd_06):
+    hour_start = psd_06["PSD_Ges_Geschwindigkeit_Std_Anf"]
+    hour_end = psd_06["PSD_Ges_Geschwindigkeit_Std_Ende"]
+    now_hour = time.localtime().tm_hour
+    
+    if (hour_start != 25 and hour_end != 25):
+      if hour_start <= hour_end:
+        is_valid = hour_start <= now_hour < hour_end
+      else:
+        is_valid = now_hour >= hour_start or now_hour < hour_end
+    else:
+      is_valid = False
+      
+    return is_valid
 
   def _dfs(self, seg_id, total_dist, visited, current_speed_ms, best_result):
     if seg_id in visited:
