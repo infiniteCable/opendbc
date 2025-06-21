@@ -183,7 +183,7 @@ class SpeedLimitManager:
         self.predicative_segments[segment_id]["QualityFlag"] = True
 
   def _speed_limit_is_valid_now_psd(self, psd_06, raining):
-    # by date TODO
+    # by day
     day_start = psd_06["PSD_Ges_Geschwindigkeit_Tag_Anf"]
     day_end = psd_06["PSD_Ges_Geschwindigkeit_Tag_Ende"]
     now_weekday = (time.localtime().tm_wday + 1)  # Python: 0=Montag → PSD: 1=Montag
@@ -209,13 +209,17 @@ class SpeedLimitManager:
     else:
       is_valid_by_time = True
 
-    # by weather conditions TODO
+    # by weather condition
     weather_condition = psd_06["PSD_Ges_Geschwindigkeit_Witter"]
     is_valid_by_weather_conditions = weather_condition == 0 or ( raining and weather_condition == 1 )
 
-    is_valid = is_valid_by_time and is_valid_by_weather_conditions and is_valid_by_day and is_valid_by_weather_conditions
+    checks = [
+      is_valid_by_time,
+      is_valid_by_day,
+      is_valid_by_weather_conditions,
+    ]
       
-    return is_valid
+    return all(checks)
 
   def _dfs(self, seg_id, total_dist, visited, current_speed_ms, best_result):
     if seg_id in visited:
