@@ -346,12 +346,13 @@ class CarState(CarStateBase):
         ret.cruiseState.speed = 0
 
     # Speed Limit
+    raining = pt_cp.vl["RLS_01"]["RS_Regenmenge"] > 0
     vze_01_values = cam_cp.vl["MEB_VZE_01"] # Traffic Sign Recognition
     psd_04_values = main_cp.vl["PSD_04"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {} # Predicative Street Data
     psd_05_values = main_cp.vl["PSD_05"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {}
     psd_06_values = main_cp.vl["PSD_06"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {}
 
-    self.speed_limit_mgr.update(ret.vEgo, psd_04_values, psd_05_values, psd_06_values, vze_01_values)
+    self.speed_limit_mgr.update(ret.vEgo, psd_04_values, psd_05_values, psd_06_values, vze_01_values, raining)
     ret.cruiseState.speedLimit = self.speed_limit_mgr.get_speed_limit()
     ret.cruiseState.speedLimitPredicative = self.speed_limit_mgr.get_speed_limit_predicative()
 
@@ -549,6 +550,7 @@ class CarState(CarStateBase):
       ("Gateway_73", 20),
       ("SAM_01", 5),
       ("Motor_51", 50),
+      ("RLS_01", 5),
     ]
 
     if CP.flags & VolkswagenFlags.STOCK_KLR_PRESENT:
