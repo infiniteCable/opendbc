@@ -174,7 +174,7 @@ class SpeedLimitManager:
         psd_06["PSD_Ges_Gesetzlich_Kategorie"] == 0 and
         psd_06["PSD_Ges_Segment_ID"] != NOT_SET):
 
-      raw_speed = psd_06["PSD_Ges_Geschwindigkeit"] if self._speed_limit_is_valid_now_psd(psd_06) else NOT_SET
+      raw_speed = psd_06["PSD_Ges_Geschwindigkeit"] if self._speed_limit_is_valid_now_psd(psd_06) and psd_06["PSD_Ges_Geschwindigkeit_Witter"] == 0 else NOT_SET
       segment_id = psd_06["PSD_Ges_Segment_ID"]
 
       if segment_id in self.predicative_segments:
