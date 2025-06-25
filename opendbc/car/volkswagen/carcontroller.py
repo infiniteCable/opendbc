@@ -217,7 +217,7 @@ class CarController(CarControllerBase):
                                                  CS.esp_hold_confirmation, long_override, long_override_begin, long_disabling)
           can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.enabled,
                                                              self.long_jerk_up_last, self.long_jerk_down_last, upper_control_limit, lower_control_limit,
-                                                             accel, acc_control, acc_hold_type, stopping, starting,
+                                                             accel, acc_control, acc_hold_type, stopping, starting, CS.out.vEgoRaw * CV.MS_TO_KPH
                                                              long_override, CS.travel_assist_available))
 
         else:
