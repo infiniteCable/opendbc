@@ -3,7 +3,7 @@ from opendbc.car.common.conversions import Conversions as CV
 
 
 def get_long_jerk_limits(enabled, override, accel, accel_last, jerk_up, jerk_down, dy_up, dy_down, dt,
-                         critical_state, filter_gain=0.9, jerk_limit_min=0.5, jerk_limit_max=5.0):
+                         critical_state, filter_gain=0.8, jerk_limit_min=0.5, jerk_limit_max=5.0):
   # jerk limits by accel change are used to improve comfort while ensuring a fast enough car reaction
   # override mechanics reminder:
   # (1) sending accel = 0 and directly setting jerk to zero results in round about steady accel until harder accel pedal press -> lack of control
