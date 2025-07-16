@@ -282,6 +282,7 @@ class CarController(CarControllerBase):
             lead_distance = 512 if CS.upscale_lead_car_signal else 8
           acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
           # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
+          # FIXME: Detect clusters with vEgoCluster offsets and apply an identical vCruiseCluster offset
           set_speed = hud_control.setSpeed * CV.MS_TO_KPH
           can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
                                                            lead_distance, hud_control.leadDistanceBars))
